@@ -8,7 +8,7 @@ import logging
 
 BUS = None
 address = 0x42
-gpsReadInterval = 0.1
+gps_read_interval = 0.1
 LOG = logging.getLogger()
 
 # GUIDE
@@ -32,33 +32,33 @@ GPSDAT = {
     'DPGS_ID': None
 }
 
-def connectBus():
+def connect_bus():
     global BUS
     BUS = smbus.SMBus(1)
 
-def parseResponse(gpsChars):
-    if "*" not in gpsChars:
+def parse_response(gps_chars):
+    if "*" not in gps_chars:
         return False
 
-    gpsStr, chkSum = gpsChars.split('*')
-    gpsComponents = gpsStr.split(',')
-    gpsStart = gpsComponents[0]
-    if (gpsStart == "$GNGGA"):
-        chkVal = 0
-        for ch in gpsStr[1:]: # Remove the $
-            chkVal ^= ord(ch)
-        if (chkVal == int(chkSum, 16)):
+    gps_str, chk_sum = gps_chars.split('*')
+    gps_components = gps_str.split(',')
+    gps_start = gps_components[0]
+    if (gps_start == "$GNGGA"):
+        chk_val = 0
+        for ch in gps_str[1:]: # Remove the $
+            chk_val ^= ord(ch)
+        if (chk_val == int(chk_sum, 16)):
             for i, k in enumerate(
                 ['strType', 'fixTime',
                 'lat', 'latDir', 'lon', 'lonDir',
                 'fixQual', 'numSat', 'horDil',
                 'alt', 'altUnit', 'galt', 'galtUnit',
                 'DPGS_updt', 'DPGS_ID']):
-                GPSDAT[k] = gpsComponents[i]
-            print gpsChars
+                GPSDAT[k] = gps_components[i]
+            print gps_chars
             print json.dumps(GPSDAT, indent=2)
 
-def readGPS():
+def read_gps():
     byte = None
     response_bytes = []
     try:
@@ -73,15 +73,15 @@ def readGPS():
             else:
                 response_bytes.append(byte)
         response_chars = ''.join(chr(byte) for byte in response_bytes)
-        parseResponse(response_chars)
+        parse_response(response_chars)
     except IOError:
         time.sleep(0.5)
-        connectBus()
+        connect_bus()
     except Exception, e:
         print e
         LOG.error(e)
 
-connectBus()
+connect_bus()
 while True:
-    readGPS()
-    time.sleep(gpsReadInterval)
+    read_gps()
+    time.sleep(gps_read_interval)
