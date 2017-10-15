@@ -44,17 +44,17 @@ def parse_response(gps_chars):
     gps_str, chk_sum = gps_chars.split('*')
     gps_components = gps_str.split(',')
     gps_start = gps_components[0]
-    if (gps_start == "$GNGGA"):
+    if gps_start == "$GNGGA":
         chk_val = 0
-        for ch in gps_str[1:]: # Remove the $
-            chk_val ^= ord(ch)
-        if (chk_val == int(chk_sum, 16)):
+        for char in gps_str[1:]: # Remove the $
+            chk_val ^= ord(char)
+        if chk_val == int(chk_sum, 16):
             for i, k in enumerate(
-                ['strType', 'fixTime',
-                'lat', 'latDir', 'lon', 'lonDir',
-                'fixQual', 'numSat', 'horDil',
-                'alt', 'altUnit', 'galt', 'galtUnit',
-                'DPGS_updt', 'DPGS_ID']):
+                    ['strType', 'fixTime',
+                     'lat', 'latDir', 'lon', 'lonDir',
+                     'fixQual', 'numSat', 'horDil',
+                     'alt', 'altUnit', 'galt', 'galtUnit',
+                     'DPGS_updt', 'DPGS_ID']):
                 GPSDAT[k] = gps_components[i]
             print gps_chars
             print json.dumps(GPSDAT, indent=2)
@@ -68,7 +68,8 @@ def read_gps():
             byte = BUS.read_byte(address)
             if byte == 255:
                 return False
-            elif byte > 126: # FIXME: unprintable char, not sure what these might be... Maybe load an ASCII table library to translate? May be i2c control chars?
+            elif byte > 126: # FIXME: unprintable char, not sure what these might be...
+                # Maybe load an ASCII table library to translate? May be i2c control chars?
                 print "Unprintable char int={0}, chr={1}".format(byte, chr(byte))
             elif byte == 10: # FIXME: magic number
                 break
@@ -79,8 +80,8 @@ def read_gps():
     except IOError:
         time.sleep(0.5)
         connect_bus()
-    except Exception, e:
-        print "Exception {0}".format(e)
+    except Exception, exception:
+        print "Exception {0}".format(exception)
 
 connect_bus()
 while True:

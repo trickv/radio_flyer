@@ -8,4 +8,4 @@ install:
   - pip install pylint
 
 script:
-  - pylint hack.py
+  - pylint --disable missing-docstring hack.py
