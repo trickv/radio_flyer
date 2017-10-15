@@ -7,8 +7,8 @@ import smbus
 # TODO: might want to try smbus2? https://github.com/kplindegaard/smbus2/
 
 BUS = None
-address = 0x42
-gps_read_interval = 0.1
+I2C_ADDRESS = 0x42
+GPS_READ_INTERVAL = 0.1
 
 # Sources:
 # http://ava.upuaut.net/?p=768
@@ -59,13 +59,13 @@ def parse_response(gps_chars):
             print gps_chars
             print json.dumps(GPSDAT, indent=2)
 
-def read_gps():
+def read_gps(i2c_address):
     # FIXME: read using i2c read_word
     byte = None
     response_bytes = []
     try:
         while True: # Newline, or bad char.
-            byte = BUS.read_byte(address)
+            byte = BUS.read_byte(i2c_address)
             if byte == 255:
                 return False
             elif byte > 126: # FIXME: unprintable char, not sure what these might be...
@@ -85,5 +85,5 @@ def read_gps():
 
 connect_bus()
 while True:
-    read_gps()
-    time.sleep(gps_read_interval)
+    read_gps(I2C_ADDRESS)
+    time.sleep(GPS_READ_INTERVAL)
