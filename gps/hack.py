@@ -2,6 +2,9 @@ import time
 import json
 import smbus
 import logging
+# TODO: pynmea2 parses NMEA strings: https://github.com/Knio/pynmea2/
+# FIXME: Enable flight mode
+# TODO: disable unnecessary strings by sending $PUBX strings
 
 BUS = None
 address = 0x42
