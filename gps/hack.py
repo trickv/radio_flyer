@@ -34,7 +34,6 @@ def connectBus():
     BUS = smbus.SMBus(1)
 
 def parseResponse(gpsLine):
-    global lastLocation
     gpsChars = ''.join(chr(c) for c in gpsLine)
     if "*" not in gpsChars:
         return False
