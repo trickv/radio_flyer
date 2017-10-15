@@ -1,7 +1,6 @@
 import time
 import json
 import smbus
-import logging
 # TODO: pynmea2 parses NMEA strings: https://github.com/Knio/pynmea2/
 # FIXME: Enable flight mode
 # TODO: disable unnecessary strings by sending $PUBX strings
@@ -9,7 +8,6 @@ import logging
 BUS = None
 address = 0x42
 gps_read_interval = 0.1
-LOG = logging.getLogger()
 
 # GUIDE
 # http://ava.upuaut.net/?p=768
@@ -78,8 +76,7 @@ def read_gps():
         time.sleep(0.5)
         connect_bus()
     except Exception, e:
-        print e
-        LOG.error(e)
+        print "Exception {0}".format(e)
 
 connect_bus()
 while True:
