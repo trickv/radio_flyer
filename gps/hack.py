@@ -33,8 +33,7 @@ def connectBus():
     global BUS
     BUS = smbus.SMBus(1)
 
-def parseResponse(gpsLine):
-    gpsChars = ''.join(chr(c) for c in gpsLine)
+def parseResponse(gpsChars):
     if "*" not in gpsChars:
         return False
 
@@ -57,20 +56,21 @@ def parseResponse(gpsLine):
             print json.dumps(GPSDAT, indent=2)
 
 def readGPS():
-    c = None
-    response = []
+    byte = None
+    response_bytes = []
     try:
         while True: # Newline, or bad char.
-            c = BUS.read_byte(address)
-            if c == 255:
+            byte = BUS.read_byte(address)
+            if byte == 255:
                 return False
-            elif c > 126: # FIXME: unprintable char, not sure what these might be... Maybe load an ASCII table library to translate? May be i2c control chars?
-                print "Unprintable char int={0}, chr={1}".format(c, chr(c))
-            elif c == 10: # FIXME: magic number
+            elif byte > 126: # FIXME: unprintable char, not sure what these might be... Maybe load an ASCII table library to translate? May be i2c control chars?
+                print "Unprintable char int={0}, chr={1}".format(byte, chr(byte))
+            elif byte == 10: # FIXME: magic number
                 break
             else:
-                response.append(c)
-        parseResponse(response)
+                response_bytes.append(byte)
+        response_chars = ''.join(chr(byte) for byte in response_bytes)
+        parseResponse(response_chars)
     except IOError:
         time.sleep(0.5)
         connectBus()
