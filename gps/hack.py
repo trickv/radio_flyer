@@ -4,13 +4,16 @@ import smbus
 # TODO: pynmea2 parses NMEA strings: https://github.com/Knio/pynmea2/
 # FIXME: Enable flight mode
 # TODO: disable unnecessary strings by sending $PUBX strings
+# TODO: might want to try smbus2? https://github.com/kplindegaard/smbus2/
 
 BUS = None
 address = 0x42
 gps_read_interval = 0.1
 
-# GUIDE
+# Sources:
 # http://ava.upuaut.net/?p=768
+# https://stackoverflow.com/questions/28867795/reading-i2c-data-from-gps
+# https://github.com/tuupola/micropython-gnssl76l/blob/master/gnssl76l.py
 
 GPSDAT = {
     'strType': None,
@@ -57,6 +60,7 @@ def parse_response(gps_chars):
             print json.dumps(GPSDAT, indent=2)
 
 def read_gps():
+    # FIXME: read using i2c read_word
     byte = None
     response_bytes = []
     try:
