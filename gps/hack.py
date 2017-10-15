@@ -80,7 +80,7 @@ def read_gps(i2c_address):
     except IOError:
         time.sleep(0.5)
         connect_bus()
-    except Exception, exception:
+    except Exception as exception:
         print("Exception {0}".format(exception))
 
 connect_bus()
