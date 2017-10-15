@@ -1,7 +1,7 @@
 import time
 import json
 import smbus
-import logging 
+import logging
 
 BUS = None
 address = 0x42
@@ -39,7 +39,7 @@ def parseResponse(gpsLine):
     if "*" not in gpsChars:
         return False
 
-    gpsStr, chkSum = gpsChars.split('*')    
+    gpsStr, chkSum = gpsChars.split('*')
     gpsComponents = gpsStr.split(',')
     gpsStart = gpsComponents[0]
     if (gpsStart == "$GNGGA"):
@@ -48,9 +48,9 @@ def parseResponse(gpsLine):
             chkVal ^= ord(ch)
         if (chkVal == int(chkSum, 16)):
             for i, k in enumerate(
-                ['strType', 'fixTime', 
+                ['strType', 'fixTime',
                 'lat', 'latDir', 'lon', 'lonDir',
-                'fixQual', 'numSat', 'horDil', 
+                'fixQual', 'numSat', 'horDil',
                 'alt', 'altUnit', 'galt', 'galtUnit',
                 'DPGS_updt', 'DPGS_ID']):
                 GPSDAT[k] = gpsComponents[i]
