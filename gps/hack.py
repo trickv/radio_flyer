@@ -65,7 +65,9 @@ def readGPS():
             c = BUS.read_byte(address)
             if c == 255:
                 return False
-            elif c == 10:
+            elif c > 126: # FIXME: unprintable char, not sure what these might be... Maybe load an ASCII table library to translate? May be i2c control chars?
+                print "Unprintable char int={0}, chr={1}".format(c, chr(c))
+            elif c == 10: # FIXME: magic number
                 break
             else:
                 response.append(c)
