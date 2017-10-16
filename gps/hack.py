@@ -38,6 +38,7 @@ def connect_bus():
     BUS = smbus.SMBus(1)
 
 def parse_response(gps_chars):
+    print("LINE: %s" % gps_chars)
     if "*" not in gps_chars:
         return False
 
