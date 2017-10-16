@@ -73,7 +73,7 @@ def read_gps(i2c_address):
     try:
         while True: # Newline, or bad char.
             block = BUS.read_i2c_block_data(i2c_address, 0, 16)
-            last_byte = block[:-1]
+            last_byte = block[-1]
             if last_byte == 255:
                 return False
             elif last_byte > 126: # FIXME: unprintable char, not sure what these might be...
@@ -82,7 +82,7 @@ def read_gps(i2c_address):
             elif last_byte == 10: # FIXME: magic number
                 break
             else:
-                response_bytes.append(block)
+                response_bytes = response_bytes + block
         response_chars = ''.join(chr(byte) for byte in response_bytes)
         parse_response(response_chars)
     except IOError:
