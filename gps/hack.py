@@ -72,7 +72,7 @@ def read_gps(i2c_address):
     response_bytes = []
     try:
         while True: # Newline, or bad char.
-            block = bus.read_i2c_block_data(i2c_address, 0, 16)
+            block = BUS.read_i2c_block_data(i2c_address, 0, 16)
             last_byte = block[:-1]
             if last_byte == 255:
                 return False
@@ -88,8 +88,6 @@ def read_gps(i2c_address):
     except IOError:
         time.sleep(0.5)
         connect_bus()
-    except Exception as exception:
-        print("Exception {0}".format(exception))
 
 connect_bus()
 while True:
