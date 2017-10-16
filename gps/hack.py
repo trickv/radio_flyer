@@ -65,8 +65,8 @@ def parse_response(gps_chars):
                      'DPGS_updt', 'DPGS_ID']):
                 GPSDAT[k] = gps_components[i]
             print(json.dumps(GPSDAT, indent=2))
-    else:
-        print "Invalid chksum: %s" % gps_chars
+        else:
+            print "Invalid chksum: %s" % gps_chars
 
 def read_gps(i2c_address):
     # FIXME: read using i2c read_word
