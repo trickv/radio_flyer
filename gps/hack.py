@@ -49,7 +49,7 @@ def parse_response(gps_chars):
     gps_str, chk_sum = star_split
     gps_components = gps_str.split(',')
     gps_start = gps_components[0]
-    if gps_start == "$GNGGA":
+    if gps_start == "$GNGGA": # GNGGA means US+Russian systems used, this is a hack
         chk_val = 0
         for char in gps_str[1:]: # Remove the $
             chk_val ^= ord(char)
