@@ -41,7 +41,12 @@ def parse_response(gps_chars):
     if "*" not in gps_chars:
         return False
 
-    gps_str, chk_sum = gps_chars.split('*')
+    star_split = gps_chars.split('*')
+    if len(star_split) != 2:
+        emsg = "too many stars: %s" % gps_chars
+        raise Exception(emsg)
+        return
+    gps_str, chk_sum = star_split
     gps_components = gps_str.split(',')
     gps_start = gps_components[0]
     if gps_start == "$GNGGA":
@@ -56,8 +61,9 @@ def parse_response(gps_chars):
                      'alt', 'altUnit', 'galt', 'galtUnit',
                      'DPGS_updt', 'DPGS_ID']):
                 GPSDAT[k] = gps_components[i]
-            print(gps_chars)
             print(json.dumps(GPSDAT, indent=2))
+    else:
+        print "Invalid chksum: %s" % gps_chars
 
 def read_gps(i2c_address):
     # FIXME: read using i2c read_word
