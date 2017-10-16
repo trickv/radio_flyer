@@ -69,21 +69,20 @@ def parse_response(gps_chars):
             print "Invalid chksum: %s" % gps_chars
 
 def read_gps(i2c_address):
-    # FIXME: read using i2c read_word
-    byte = None
     response_bytes = []
     try:
         while True: # Newline, or bad char.
-            byte = BUS.read_byte(i2c_address)
-            if byte == 255:
+            block = bus.read_i2c_block_data(i2c_address, 0, 16)
+            last_byte = block[:-1]
+            if last_byte == 255:
                 return False
-            elif byte > 126: # FIXME: unprintable char, not sure what these might be...
+            elif last_byte > 126: # FIXME: unprintable char, not sure what these might be...
                 # Maybe load an ASCII table library to translate? May be i2c control chars?
-                print("Unprintable char int={0}, chr={1}".format(byte, chr(byte)))
-            elif byte == 10: # FIXME: magic number
+                print("Unprintable char int={0}, chr={1}".format(last_byte, chr(last_byte)))
+            elif last_byte == 10: # FIXME: magic number
                 break
             else:
-                response_bytes.append(byte)
+                response_bytes.append(block)
         response_chars = ''.join(chr(byte) for byte in response_bytes)
         parse_response(response_chars)
     except IOError:
