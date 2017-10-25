@@ -128,8 +128,7 @@ def read_gps(i2c_address):
             last_byte = block[-1]
             if last_byte == 255:
                 return False
-            elif last_byte > 126: # FIXME: unprintable char, not sure what these might be...
-                # Maybe load an ASCII table library to translate? May be i2c control chars?
+            elif last_byte > 126: # TODO: This (for me) is a symptom of i2c bus problems. Throw?
                 print("Unprintable char int={0}, chr={1}".format(last_byte, chr(last_byte)))
             elif last_byte == 10: # new line character
                 break
