@@ -4,8 +4,6 @@ import time
 import json
 import smbus
 # TODO: pynmea2 parses NMEA strings: https://github.com/Knio/pynmea2/
-# FIXME: Enable flight mode
-# TODO: disable unnecessary strings by sending $PUBX strings
 # TODO: might want to try smbus2? https://github.com/kplindegaard/smbus2/
 
 BUS = None
@@ -24,6 +22,11 @@ def connect_bus():
     BUS = smbus.SMBus(1)
 
 def initialize_ublox(i2c_address):
+    """
+    None of this code works for me.
+    I ended up having to initialize the GPS over serial, as writes
+    to i2c seem to be ignored. I must be doing it wrong.
+    """
     disable_template = "PUBX,40,%s,0,0,0,0"
     messages_disable = [
         "GSV",
@@ -159,6 +162,7 @@ def __read_gps_i2c_blockread(i2c_address):
 if __name__ == "__main__":
     connect_bus()
     #initialize_ublox(I2C_ADDRESS)
+    gps_location = None
     while True:
         gps_location = read_gps(I2C_ADDRESS)
         if gps_location:
