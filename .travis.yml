@@ -1,0 +1,15 @@
+language: python
+
+python:
+  - "2.7"
+  - "3.3"
+  - "3.4"
+  - "3.5"
+  - "3.6"
+
+install:
+  - pip install pylint
+  - pip install -r requirements.pip
+
+script:
+  - pylint --disable superfluous-parens --disable missing-docstring *.py; ret=$?; if [[ $ret -eq 4 ]]; then exit 0; fi; exit $ret
