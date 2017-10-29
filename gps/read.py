@@ -48,7 +48,7 @@ def _send_command_string(i2c_address, message):
     message = [ord(i) for i in message]
     message.append(10)
     chunks = []
-    while len(message) > 0:
+    while message:
         chunks.append(message[:16])
         message = message[16:]
     position = 0
@@ -60,12 +60,12 @@ def _send_command_string(i2c_address, message):
     time.sleep(1)
 
 
-def _serenity_HACK_initialize_ublox(i2c_address):
+def _serenity_hack_initialize_ublox(i2c_address):
     # following is from https://github.com/Chetic/Serenity/blob/master/Serenity.py#L13
     set_nmea_off = bytearray.fromhex("B5 62 06 00 14 00 01 00 00 00 D0 08 00 00 80 25 00 00 07 00 01 00 00 00 00 00 A0 A9")
     set_nmea_off = list(set_nmea_off)
     chunks = []
-    while len(set_nmea_off) > 0:
+    while set_nmea_off:
         chunks.append(set_nmea_off[:16])
         set_nmea_off = set_nmea_off[16:]
     position = 0
@@ -85,7 +85,6 @@ def parse_response(gps_chars):
     if len(star_split) != 2:
         emsg = "too many stars: %s" % gps_chars
         raise Exception(emsg)
-        return
     gps_str, chk_sum = star_split
     gps_components = gps_str.split(',')
     gps_start = gps_components[0]
@@ -161,6 +160,6 @@ if __name__ == "__main__":
     connect_bus()
     #initialize_ublox(I2C_ADDRESS)
     while True:
-        location = read_gps(I2C_ADDRESS)
-        if location:
-            print(json.dumps(location, indent=2))
+        gps_location = read_gps(I2C_ADDRESS)
+        if gps_location:
+            print(json.dumps(gps_location, indent=2))
