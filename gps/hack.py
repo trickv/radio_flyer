@@ -11,29 +11,13 @@ import smbus
 BUS = None
 I2C_ADDRESS = 0x42
 GPS_READ_INTERVAL = 0.1
+DEBUG = True
 
 # Sources:
 # http://ava.upuaut.net/?p=768
 # https://stackoverflow.com/questions/28867795/reading-i2c-data-from-gps
 # https://github.com/tuupola/micropython-gnssl76l/blob/master/gnssl76l.py
 
-GPSDAT = {
-    'strType': None,
-    'fixTime': None,
-    'lat': None,
-    'latDir': None,
-    'lon': None,
-    'lonDir': None,
-    'fixQual': None,
-    'numSat': None,
-    'horDil': None,
-    'alt': None,
-    'altUnit': None,
-    'galt': None,
-    'galtUnit': None,
-    'DPGS_updt': None,
-    'DPGS_ID': None
-}
 
 def connect_bus():
     global BUS
@@ -92,7 +76,8 @@ def _serenity_HACK_initialize_ublox(i2c_address):
         position += len(chunk)
 
 def parse_response(gps_chars):
-    print("LINE: %s" % gps_chars)
+    if DEBUG:
+        print("LINE: %s" % gps_chars)
     if "*" not in gps_chars:
         return False
 
@@ -104,6 +89,23 @@ def parse_response(gps_chars):
     gps_str, chk_sum = star_split
     gps_components = gps_str.split(',')
     gps_start = gps_components[0]
+    gps_data = {
+        'strType': None,
+        'fixTime': None,
+        'lat': None,
+        'latDir': None,
+        'lon': None,
+        'lonDir': None,
+        'fixQual': None,
+        'numSat': None,
+        'horDil': None,
+        'alt': None,
+        'altUnit': None,
+        'galt': None,
+        'galtUnit': None,
+        'DPGS_updt': None,
+        'DPGS_ID': None
+    }
     if gps_start == "$GNGGA": # GNGGA means US+Russian systems used, this is a hack
         chk_val = 0
         for char in gps_str[1:]: # Remove the $
@@ -115,34 +117,50 @@ def parse_response(gps_chars):
                      'fixQual', 'numSat', 'horDil',
                      'alt', 'altUnit', 'galt', 'galtUnit',
                      'DPGS_updt', 'DPGS_ID']):
-                GPSDAT[k] = gps_components[i]
-            print(json.dumps(GPSDAT, indent=2))
+                gps_data[k] = gps_components[i]
+            return(gps_data)
         else:
-            print "Invalid chksum: %s" % gps_chars
+            print("py_ublox_i2c: Invalid chksum: %s" % gps_chars)
 
 def read_gps(i2c_address):
     response_bytes = []
-    try:
-        while True: # Newline, or bad char.
-            block = BUS.read_i2c_block_data(i2c_address, 0, 16)
-            last_byte = block[-1]
-            if last_byte == 255:
-                return False
-            elif last_byte > 126: # TODO: This (for me) is a symptom of i2c bus problems. Throw?
-                print("Unprintable char int={0}, chr={1}".format(last_byte, chr(last_byte)))
-            elif last_byte == 10: # new line character
-                break
-            else:
-                response_bytes = response_bytes + block
-        response_chars = ''.join(chr(byte) for byte in response_bytes)
-        parse_response(response_chars)
-    except IOError as exception:
-        print("IOError exception {0}".format(exception))
-        time.sleep(0.5)
-        connect_bus()
+    while True:
+        byte = BUS.read_byte(i2c_address)
+        if byte == 255:
+            return False
+        elif byte > 126: # TODO: This (for me) is a symptom of i2c bus problems. Throw?
+            print("Unprintable char int={0}, chr={1}".format(byte, chr(byte)))
+        elif byte == 10: # new line character
+            break
+        else:
+            response_bytes.append(byte)
+    response_chars = ''.join(chr(byte) for byte in response_bytes)
+    return(parse_response(response_chars))
 
-connect_bus()
-initialize_ublox(I2C_ADDRESS)
-while True:
-    read_gps(I2C_ADDRESS)
-    time.sleep(GPS_READ_INTERVAL)
+def __read_gps_i2c_blockread(i2c_address):
+    """
+    This should perform better and worked in some of my tests, but seems to be throwing
+    a lot more I/O errors now. So use read_gps instead, which reads 1 byte at a time.
+    """
+    response_bytes = []
+    while True: # Newline, or bad char.
+        block = BUS.read_i2c_block_data(i2c_address, 0, 16)
+        last_byte = block[-1]
+        if last_byte == 255:
+            return False
+        elif last_byte > 126: # TODO: This (for me) is a symptom of i2c bus problems. Throw?
+            print("Unprintable char int={0}, chr={1}".format(last_byte, chr(last_byte)))
+        elif last_byte == 10: # new line character
+            break
+        else:
+            response_bytes = response_bytes + block
+    response_chars = ''.join(chr(byte) for byte in response_bytes)
+    return(parse_response(response_chars))
+
+if __name__ == "__main__":
+    connect_bus()
+    #initialize_ublox(I2C_ADDRESS)
+    while True:
+        location = read_gps(I2C_ADDRESS)
+        if location:
+            print(json.dumps(location, indent=2))
