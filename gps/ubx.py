@@ -63,9 +63,9 @@ def parseResponse(gpsLine):
                 'alt', 'altUnit', 'galt', 'galtUnit',
                 'DPGS_updt', 'DPGS_ID']):
                 GPSDAT[k] = gpsComponents[i]
-            print json.dumps(GPSDAT, indent=2)
+            print(json.dumps(GPSDAT, indent=2))
         else:
-            print "Invalid chksum: %s" % gpsChars
+            print("Invalid chksum: %s" % gpsChars)
 
 def readGPS():
     c = None
@@ -75,7 +75,7 @@ def readGPS():
         if c == 255:
             return False
         elif c >126:
-            print "special char: %s, c=%d" % (chr(c), c)
+            print("special char: %s, c=%d" % (chr(c), c))
         elif c == 10:
             break
         else:
