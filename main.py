@@ -23,4 +23,5 @@ if __name__ == "__main__":
         sentence = [callsign]
         sentence.append(gps_location.lat, gps_location.lon, alt)
         sentence_string = sentence.join(',')
+        # CHECKSUM!
         transmitter.send_sentence(sentence_string)
