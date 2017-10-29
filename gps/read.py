@@ -164,3 +164,4 @@ if __name__ == "__main__":
         location = read_gps(I2C_ADDRESS)
         if location:
             print(json.dumps(location, indent=2))
+            print "foo"
