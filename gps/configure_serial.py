@@ -34,7 +34,7 @@ def disable_excessive_reports(gps_serial):
         for character in disable_command:
             checksum_int ^= ord(character)
         disable_command = "$%s*%x\r\n" % (disable_command, checksum_int)
-        gps_serial.write(disable_command)
+        gps_serial.write(disable_command.encode('ascii'))
 
 def __send_thingymabob():
     """
