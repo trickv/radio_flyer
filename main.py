@@ -6,7 +6,7 @@ import utils
 import transmitter
 import time
 
-callsign = "MCNAIR"
+callsign = "RADIOFLYER"
 
 ublox_i2c_address = 0x42 # FIXME should be in lib
 BUS = None
