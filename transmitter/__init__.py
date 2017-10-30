@@ -1,9 +1,6 @@
 import wiringpi
 import serial
 
-wiringpi.wiringPiSetupGpio()
-wiringpi.pinMode(relay_control_pin, 1)
-
 
 class Transmitter():
     uart = None
@@ -16,7 +13,9 @@ class Transmitter():
     rtty_stopbits = serial.STOPBITS_TWO
 
     def enable_tx(self):
-        wiringpi.digitalWrite(enable_gpio_pin, 1)
+        wiringpi.wiringPiSetupGpio()
+        wiringpi.pinMode(self.enable_gpio_pin, 1)
+        wiringpi.digitalWrite(self.enable_gpio_pin, 1)
 
     def open_uart(self):
         if self.uart:
@@ -26,4 +25,5 @@ class Transmitter():
             self.rtty_parity, self.rtty_stopbits)
 
     def send_sentence(self, sentence):
-        self.uart.write(sentence)
+        print("TX: {0}".format(sentence))
+        self.uart.write(sentence.encode('ascii'))

@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
 
-import py_ublox_i2c
+import py_ublox_i2c.read
+import py_ublox_i2c.configure_serial
 import utils
 import transmitter
+import time
 
 callsign = "MCNAIR"
+
+ublox_i2c_address = 0x42 # FIXME should be in lib
+BUS = None
 
 if __name__ == "__main__":
     # read state from disk, if this is mid flight?
@@ -15,13 +20,20 @@ if __name__ == "__main__":
     transmitter.open_uart()
     transmitter.enable_tx()
     # open i2c (?)
+    py_ublox_i2c.read.connect_bus()
     while True:
         # save state
         # read bme280
         # take photo - maybe in another process?
-        gps_location = py_ublox_i2c.read.read_gps()
+        gps_location = py_ublox_i2c.read.read_gps(ublox_i2c_address)
+        if not gps_location:
+            print("no fix?")
+            time.sleep(0.1)
+            continue
         sentence = [callsign]
-        sentence.append(gps_location.lat, gps_location.lon, alt)
-        sentence_string = sentence.join(',')
+        sentence.append(gps_location['lat'])
+        sentence.append(gps_location['lon'])
+        sentence.append(gps_location['alt'])
+        sentence_string = ",".join(sentence)
         # CHECKSUM!
         transmitter.send_sentence(sentence_string)
