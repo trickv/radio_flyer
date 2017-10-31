@@ -32,7 +32,7 @@ def disable_excessive_reports(gps_serial):
     return set_excessive_reports(gps_serial, enable=False)
 
 
-def set_excessive_reports(gps_serial, enable = False):
+def set_excessive_reports(gps_serial, enable=False):
     disable_template = "PUBX,40,%s,%d,0,0,0"
     messages_disable = [
         "GLL",
