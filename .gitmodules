@@ -1,3 +1,3 @@
 [submodule "py_ublox_i2c"]
 	path = py_ublox_i2c
-	url = git@github.com:trickv/py_ublox_i2c.git
+	url = https://github.com/trickv/py_ublox_i2c.git
