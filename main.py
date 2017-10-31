@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
 
+import time
+
 import py_ublox_i2c.read
 import py_ublox_i2c.configure_serial
 import utils
 import transmitter
-import time
 
 callsign = "RADIOFLYER"
 
 ublox_i2c_address = 0x42 # FIXME should be in lib
 BUS = None
 
-if __name__ == "__main__":
+def main ():
     # read state from disk, if this is mid flight?
     utils.enable_relay_uart_to_gps()
     py_ublox_i2c.configure_serial.configure()
@@ -36,4 +37,7 @@ if __name__ == "__main__":
         sentence.append(gps_location['alt'])
         sentence_string = ",".join(sentence)
         # CHECKSUM!
+
+if __name__ == "__main__":
+    main()
         transmitter.send_sentence(sentence_string)
