@@ -1,4 +1,4 @@
 wiringpi
 pyserial
-#python-smbus
+smbus-cffi
 pylint
