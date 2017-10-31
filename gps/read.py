@@ -3,7 +3,7 @@
 import time
 import json
 import smbus
-# TODO: pynmea2 parses NMEA strings: https://github.com/Knio/pynmea2/
+import pynmea2
 # TODO: might want to try smbus2? https://github.com/kplindegaard/smbus2/
 
 BUS = None
@@ -78,66 +78,29 @@ def _serenity_hack_initialize_ublox(i2c_address):
         BUS.write_i2c_block_data(i2c_address, position, chunk)
         position += len(chunk)
 
-def parse_response(gps_chars):
-    if DEBUG:
-        print("LINE: %s" % gps_chars)
-    if "*" not in gps_chars:
-        return False
-
-    star_split = gps_chars.split('*')
-    if len(star_split) != 2:
-        emsg = "too many stars: %s" % gps_chars
-        raise Exception(emsg)
-    gps_str, chk_sum = star_split
-    gps_components = gps_str.split(',')
-    gps_start = gps_components[0]
-    gps_data = {
-        'strType': None,
-        'fixTime': None,
-        'lat': None,
-        'latDir': None,
-        'lon': None,
-        'lonDir': None,
-        'fixQual': None,
-        'numSat': None,
-        'horDil': None,
-        'alt': None,
-        'altUnit': None,
-        'galt': None,
-        'galtUnit': None,
-        'DPGS_updt': None,
-        'DPGS_ID': None
-    }
-    if gps_start == "$GNGGA": # GNGGA means US+Russian systems used, this is a hack
-        chk_val = 0
-        for char in gps_str[1:]: # Remove the $
-            chk_val ^= ord(char)
-        if chk_val == int(chk_sum, 16):
-            for i, k in enumerate(
-                    ['strType', 'fixTime',
-                     'lat', 'latDir', 'lon', 'lonDir',
-                     'fixQual', 'numSat', 'horDil',
-                     'alt', 'altUnit', 'galt', 'galtUnit',
-                     'DPGS_updt', 'DPGS_ID']):
-                gps_data[k] = gps_components[i]
-            return(gps_data)
-        else:
-            print("py_ublox_i2c: Invalid chksum: %s" % gps_chars)
 
 def read_gps(i2c_address):
     response_bytes = []
+    gibberish = False
     while True:
         byte = BUS.read_byte(i2c_address)
         if byte == 255:
             return False
         elif byte > 126: # TODO: This (for me) is a symptom of i2c bus problems. Throw?
             print("Unprintable char int={0}, chr={1}".format(byte, chr(byte)))
+            gibberish = True
         elif byte == 10: # new line character
             break
         else:
             response_bytes.append(byte)
-    response_chars = ''.join(chr(byte) for byte in response_bytes)
-    return(parse_response(response_chars))
+    if gibberish:
+        print("Not returning gibberish")
+        return False
+    else:
+        response_chars = ''.join(chr(byte) for byte in response_bytes)
+        print("LINE: %s" % response_chars)
+        msg = pynmea2.parse(response_chars, check=True)
+        return(msg)
 
 def __read_gps_i2c_blockread(i2c_address):
     """
@@ -152,12 +115,15 @@ def __read_gps_i2c_blockread(i2c_address):
             return False
         elif last_byte > 126: # TODO: This (for me) is a symptom of i2c bus problems. Throw?
             print("Unprintable char int={0}, chr={1}".format(last_byte, chr(last_byte)))
+            return False
         elif last_byte == 10: # new line character
             break
         else:
             response_bytes = response_bytes + block
     response_chars = ''.join(chr(byte) for byte in response_bytes)
-    return(parse_response(response_chars))
+    print("LINE: %s" % response_chars)
+    msg = pynmea2.parse(response_chars, check=True)
+    return(msg)
 
 if __name__ == "__main__":
     connect_bus()
@@ -166,4 +132,7 @@ if __name__ == "__main__":
     while True:
         gps_location = read_gps(I2C_ADDRESS)
         if gps_location:
-            print(json.dumps(gps_location, indent=2))
+            print(gps_location)
+        else:
+            print("Sleep 0.1")
+            time.sleep(GPS_READ_INTERVAL)
