@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import time
-import json
 import smbus
 import pynmea2
 # TODO: might want to try smbus2? https://github.com/kplindegaard/smbus2/
@@ -73,7 +72,7 @@ def _serenity_hack_initialize_ublox(i2c_address):
         set_nmea_off = set_nmea_off[16:]
     position = 0
     for chunk in chunks:
-        fop = ''.join(unichr(byte) for byte in chunk)
+        fop = ''.join(chr(byte) for byte in chunk)
         print("sending chunk (len %d(: %s" % (len(chunk), fop))
         BUS.write_i2c_block_data(i2c_address, position, chunk)
         position += len(chunk)
@@ -96,11 +95,10 @@ def read_gps(i2c_address):
     if gibberish:
         print("Not returning gibberish")
         return False
-    else:
-        response_chars = ''.join(chr(byte) for byte in response_bytes)
-        print("LINE: %s" % response_chars)
-        msg = pynmea2.parse(response_chars, check=True)
-        return(msg)
+    response_chars = ''.join(chr(byte) for byte in response_bytes)
+    print("LINE: %s" % response_chars)
+    msg = pynmea2.parse(response_chars, check=True)
+    return(msg)
 
 def __read_gps_i2c_blockread(i2c_address):
     """
@@ -125,7 +123,7 @@ def __read_gps_i2c_blockread(i2c_address):
     msg = pynmea2.parse(response_chars, check=True)
     return(msg)
 
-if __name__ == "__main__":
+def main():
     connect_bus()
     #initialize_ublox(I2C_ADDRESS)
     gps_location = None
@@ -136,3 +134,6 @@ if __name__ == "__main__":
         else:
             print("Sleep 0.1")
             time.sleep(GPS_READ_INTERVAL)
+
+if __name__ == "__main__":
+    main()
