@@ -1,3 +1,4 @@
 wiringpi
 pyserial
 #python-smbus
+pynmea2
