@@ -2,3 +2,4 @@ wiringpi
 pyserial
 smbus-cffi
 pylint
+pynmea2
