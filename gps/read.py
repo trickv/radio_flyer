@@ -126,7 +126,6 @@ def __read_gps_i2c_blockread(i2c_address):
 def main():
     connect_bus()
     #initialize_ublox(I2C_ADDRESS)
-    gps_location = None
     while True:
         gps_location = read_gps(I2C_ADDRESS)
         if gps_location:
