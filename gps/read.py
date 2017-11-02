@@ -123,7 +123,7 @@ def __read_gps_i2c_blockread(i2c_address):
     msg = pynmea2.parse(response_chars, check=True)
     return(msg)
 
-def main():
+def simple_read_demo():
     connect_bus()
     #initialize_ublox(I2C_ADDRESS)
     while True:
@@ -135,4 +135,4 @@ def main():
             time.sleep(GPS_READ_INTERVAL)
 
 if __name__ == "__main__":
-    main()
+    simple_read_demo()
