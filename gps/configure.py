@@ -3,11 +3,9 @@
 import time
 import smbus
 import pynmea2
-# TODO: might want to try smbus2? https://github.com/kplindegaard/smbus2/
 
 BUS = None
 I2C_ADDRESS = 0x42
-GPS_READ_INTERVAL = 0.1
 DEBUG = True
 
 # Sources:
@@ -78,61 +76,9 @@ def _serenity_hack_initialize_ublox(i2c_address):
         position += len(chunk)
 
 
-def read_gps(i2c_address):
-    response_bytes = []
-    gibberish = False
-    while True:
-        byte = BUS.read_byte(i2c_address)
-        if byte == 255:
-            return False
-        elif byte > 126: # TODO: This (for me) is a symptom of i2c bus problems. Throw?
-            print("Unprintable char int={0}, chr={1}".format(byte, chr(byte)))
-            gibberish = True
-        elif byte == 10: # new line character
-            break
-        else:
-            response_bytes.append(byte)
-    if gibberish:
-        print("Not returning gibberish")
-        return False
-    response_chars = ''.join(chr(byte) for byte in response_bytes)
-    print("LINE: %s" % response_chars)
-    msg = pynmea2.parse(response_chars, check=True)
-    return(msg)
-
-def __read_gps_i2c_blockread(i2c_address):
-    """
-    This should perform better and worked in some of my tests, but seems to be throwing
-    a lot more I/O errors now. So use read_gps instead, which reads 1 byte at a time.
-    """
-    response_bytes = []
-    while True: # Newline, or bad char.
-        block = BUS.read_i2c_block_data(i2c_address, 0, 16)
-        last_byte = block[-1]
-        if last_byte == 255:
-            return False
-        elif last_byte > 126: # TODO: This (for me) is a symptom of i2c bus problems. Throw?
-            print("Unprintable char int={0}, chr={1}".format(last_byte, chr(last_byte)))
-            return False
-        elif last_byte == 10: # new line character
-            break
-        else:
-            response_bytes = response_bytes + block
-    response_chars = ''.join(chr(byte) for byte in response_bytes)
-    print("LINE: %s" % response_chars)
-    msg = pynmea2.parse(response_chars, check=True)
-    return(msg)
-
-def simple_read_demo():
+def configure_example()
     connect_bus()
-    #initialize_ublox(I2C_ADDRESS)
-    while True:
-        gps_location = read_gps(I2C_ADDRESS)
-        if gps_location:
-            print(gps_location)
-        else:
-            print("Sleep 0.1")
-            time.sleep(GPS_READ_INTERVAL)
+    initialize_ublox(I2C_ADDRESS)
 
 if __name__ == "__main__":
-    simple_read_demo()
+    configure_example()
