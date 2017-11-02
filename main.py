@@ -5,7 +5,7 @@ import time
 import py_ublox_i2c.read
 import py_ublox_i2c.configure_serial
 import utils
-import transmitter
+import transmitter as transmitter_class
 
 callsign = "RADIOFLYER"
 
@@ -17,7 +17,7 @@ def main ():
     utils.enable_relay_uart_to_gps()
     py_ublox_i2c.configure_serial.configure_for_flight()
     utils.disable_relay_uart_to_gps()
-    transmitter = transmitter.Transmitter()
+    transmitter = transmitter_class.Transmitter()
     transmitter.open_uart()
     transmitter.enable_tx()
     # open i2c (?)
