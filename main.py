@@ -61,7 +61,7 @@ AttributeError: altitude
             status.append("ParseError on read_gps: %s;" % exception)
         if not gps_location:
             print("no fix?")
-            time.sleep(0.1)
+            time.sleep(0.5)
             continue
         sentence = [callsign]
         if type(gps_location) == pynmea2.types.talker.GGA:
