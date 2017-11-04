@@ -7,7 +7,6 @@ import pynmea2
 
 BUS = None
 I2C_ADDRESS = 0x42
-GPS_READ_INTERVAL = 0.1
 DEBUG = False
 
 # Sources:
@@ -15,6 +14,11 @@ DEBUG = False
 # https://stackoverflow.com/questions/28867795/reading-i2c-data-from-gps
 # https://github.com/tuupola/micropython-gnssl76l/blob/master/gnssl76l.py
 
+class BadDataException(Exception):
+    """
+    Raised when bad data has been read from the I2C bus and should probably be discarded.
+    """
+    pass
 
 def connect_bus():
     global BUS
@@ -26,9 +30,11 @@ def read_gps(i2c_address):
     gibberish = False
     while True:
         byte = BUS.read_byte(i2c_address)
-        if byte == 255:
+        if byte == 255: # this means that the ublox device reports no data available
             return False
-        elif byte > 126: # TODO: This (for me) is a symptom of i2c bus problems. Throw?
+        elif byte > 127:
+            # TODO: This (for me) is a symptom of i2c bus problems.
+            # Continue reading until the buffer is exhausted and then throw.
             if DEBUG:
                 print("py_ublox_i2c: Unprintable char int={0}, chr={1}".format(byte, chr(byte)))
             gibberish = True
@@ -39,10 +45,10 @@ def read_gps(i2c_address):
     if gibberish:
         if DEBUG:
             print("py_ublox_i2c: Not returning gibberish")
-        return False
+        raise BadDataException("Not returning gibberish i2c data")
     response_chars = ''.join(chr(byte) for byte in response_bytes)
     if DEBUG:
-        print("py_ublox_i2c: LINE: %s" % response_chars)
+        print("py_ublox_i2c: GPS sentence: %s" % response_chars)
     msg = pynmea2.parse(response_chars, check=True)
     return(msg)
 
@@ -73,13 +79,22 @@ def simple_read_demo():
     connect_bus()
     global DEBUG
     DEBUG = True
+    read_interval = 0.1
     while True:
-        gps_location = read_gps(I2C_ADDRESS)
+        try:
+            gps_location = read_gps(I2C_ADDRESS)
+        except BadDataException:
+            time.sleep(read_interval)
+            continue
+        except IOError:
+            print("IOError on read, sleeping")
+            time.sleep(read_interval)
+            continue
         if gps_location:
-            print(gps_location)
+            print(repr(gps_location))
         else:
-            print("Sleep 0.1")
-            time.sleep(GPS_READ_INTERVAL)
+            print("No data, sleeping a bit")
+            time.sleep(read_interval)
 
 if __name__ == "__main__":
     simple_read_demo()
