@@ -8,7 +8,7 @@ import pynmea2
 BUS = None
 I2C_ADDRESS = 0x42
 GPS_READ_INTERVAL = 0.1
-DEBUG = True
+DEBUG = False
 
 # Sources:
 # http://ava.upuaut.net/?p=768
@@ -21,6 +21,7 @@ def connect_bus():
     BUS = smbus.SMBus(1)
 
 def read_gps(i2c_address):
+    global DEBUG
     response_bytes = []
     gibberish = False
     while True:
@@ -28,17 +29,20 @@ def read_gps(i2c_address):
         if byte == 255:
             return False
         elif byte > 126: # TODO: This (for me) is a symptom of i2c bus problems. Throw?
-            print("Unprintable char int={0}, chr={1}".format(byte, chr(byte)))
+            if DEBUG:
+                print("py_ublox_i2c: Unprintable char int={0}, chr={1}".format(byte, chr(byte)))
             gibberish = True
         elif byte == 10: # new line character
             break
         else:
             response_bytes.append(byte)
     if gibberish:
-        print("Not returning gibberish")
+        if DEBUG:
+            print("py_ublox_i2c: Not returning gibberish")
         return False
     response_chars = ''.join(chr(byte) for byte in response_bytes)
-    print("LINE: %s" % response_chars)
+    if DEBUG:
+        print("py_ublox_i2c: LINE: %s" % response_chars)
     msg = pynmea2.parse(response_chars, check=True)
     return(msg)
 
@@ -67,6 +71,8 @@ def __read_gps_i2c_blockread(i2c_address):
 
 def simple_read_demo():
     connect_bus()
+    global DEBUG
+    DEBUG = True
     while True:
         gps_location = read_gps(I2C_ADDRESS)
         if gps_location:
