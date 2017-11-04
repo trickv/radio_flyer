@@ -23,7 +23,7 @@ def main ():
     transmitter.enable_tx()
     # open i2c (?)
     py_ublox_i2c.read.connect_bus()
-    status = ""
+    status = []
     while True:
         # save state
         # read bme280
@@ -50,10 +50,15 @@ Traceback (most recent call last):
 AttributeError: altitude
 
         """
+        gps_location = None
         try:
             gps_location = py_ublox_i2c.read.read_gps(ublox_i2c_address)
-        except  KeyError:
-            status = "KeyError on read_gps;"
+        except KeyError:
+            status.append("KeyError on read_gps: %s;" % exception)
+        except IOError as exception:
+            status.append("IOError on read_gps: %s;" % exception)
+        except pynmea2.nmea.ParseError as exception:
+            status.append("ParseError on read_gps: %s;" % exception)
         if not gps_location:
             print("no fix?")
             time.sleep(0.1)
@@ -67,13 +72,13 @@ AttributeError: altitude
             sentence.append("0")
             sentence.append("0")
             sentence.append("0")
-            status += "gps_location type %s;" % type(gps_location)
-        sentence.append(status)
+            status.append("gps_location type %s" % type(gps_location))
+        sentence.append(";".join(status))
         sentence_string = ",".join(sentence)
         # CHECKSUM!
         sentence_string += "\n"
         transmitter.send_sentence(sentence_string)
-        status = ""
+        status = []
 
 
 if __name__ == "__main__":
