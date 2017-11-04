@@ -64,15 +64,19 @@ AttributeError: altitude
             time.sleep(0.5)
             continue
         sentence = [callsign]
-        if type(gps_location) == pynmea2.types.talker.GGA:
+        if gps_location.sentence_type != 'GGA':
+            sentence.append(str(gps_location.timestamp.isoformat())
             sentence.append(str(gps_location.latitude))
             sentence.append(str(gps_location.longitude))
             sentence.append(str(gps_location.altitude))
+            sentence.append(str(int(gps_location.num_sats)))
         else:
             sentence.append("0")
             sentence.append("0")
             sentence.append("0")
-            status.append("gps_location type %s" % type(gps_location))
+            sentence.append("0")
+            sentence.append("0")
+            status.append("gps_location type %s" % gps_location.sentence_type)
         sentence.append(";".join(status))
         sentence_string = ",".join(sentence)
         # CHECKSUM!
