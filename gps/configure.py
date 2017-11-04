@@ -26,7 +26,11 @@ def initialize_ublox(i2c_address):
     """
     disable_template = "PUBX,40,%s,0,0,0,0"
     messages_disable = [
+        "GLL",
+        "GSA",
+        "RMC",
         "GSV",
+        "VTG",
     ]
     for message in messages_disable:
         disable_command = disable_template % message
@@ -76,7 +80,7 @@ def _serenity_hack_initialize_ublox(i2c_address):
         position += len(chunk)
 
 
-def configure_example()
+def configure_example():
     connect_bus()
     initialize_ublox(I2C_ADDRESS)
 
