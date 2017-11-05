@@ -14,6 +14,9 @@ ublox_i2c_address = 0x42 # FIXME should be in lib
 BUS = None
 
 coordinate_precision = 6
+        
+# TODO: should I send \r\n or can we just all be unix friends from now on?
+sentence_template = "{callsign},{time},{lat},{lon},{alt},{num_sats},{num_gps_reads},{status}\n"
 
 def main ():
     # read state from disk, if this is mid flight?
@@ -48,26 +51,26 @@ def main ():
             print(".", end="")
             time.sleep(0.5)
             continue
-        sentence = [callsign]
+        sentence_params = {
+            'callsign': callsign,
+            'num_gps_reads': num_gps_reads,
+        }
         if gps_location.sentence_type == 'GGA':
-            sentence.append(str(gps_location.timestamp.isoformat()))
-            sentence.append(str(round(gps_location.latitude, coordinate_precision))) # FIXME: what does dl-fldigi require? see serenity code.
-            sentence.append(str(round(gps_location.longitude, coordinate_precision)))
-            sentence.append(str(int(round(gps_location.altitude, 0))))
-            sentence.append(str(int(gps_location.num_sats)))
-            sentence.append(str(num_gps_reads))
+            sentence_params.update({
+                'time': gps_location.timestamp.isoformat(),
+                'lat': round(gps_location.latitude, coordinate_precision), # FIXME: what does dl-fldigi require? see serenity code.
+                'lon': round(gps_location.longitude, coordinate_precision),
+                'alt': int(round(gps_location.altitude, 0)),
+                'num_sats': int(gps_location.num_sats),
+            })
         else:
-            print("WTF?!?!: %s %s" % (gps_location, repr(gps_location)))
-            sentence.append("0")
-            sentence.append("0")
-            sentence.append("0")
-            sentence.append("0")
-            sentence.append("0")
-            status.append("gps_location type %s" % gps_location.sentence_type)
-        sentence.append(";".join(status))
-        sentence_string = ",".join(sentence)
+            # Oh shit, the GPS is sending things I don't know how to handle, so TX it as-is and move on
+            crazy = "%s: Crazy GPS data: %s %s" % (callsign, gps_location, repr(gps_location))
+            transmitter.send_sentence(crazy)
+            continue
+        sentence_params.update({'status': "'".join(status)})
+        sentence_string = sentence_template.format(**sentence_params)
         # TODO: CHECKSUM!
-        sentence_string += "\n"
         print("")
         transmitter.send_sentence(sentence_string)
         num_gps_reads = 0
