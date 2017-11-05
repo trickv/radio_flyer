@@ -40,6 +40,8 @@ def main ():
     transmitter = transmitter_class.Transmitter()
     transmitter.open_uart()
     transmitter.enable_tx()
+    transmitter.send("Worlds best tracker software. Buy bitcoin!\n\n")
+    transmitter.send("Thanks to my lovely wife Sarah.\n\n")
     py_ublox_i2c.read.connect_bus()
     num_gps_reads = 0
     while True:
@@ -55,11 +57,11 @@ def main ():
             time.sleep(0.5)
             continue
         except KeyError as exception:
-            print(exception)
+            print("K", end="")
         except IOError as exception:
-            print(exception)
+            print("I", end="")
         except pynmea2.nmea.ParseError as exception:
-            print(exception)
+            print("P", end="")
         if not gps_location:
             print(".", end="")
             time.sleep(0.5)
@@ -69,7 +71,6 @@ def main ():
             'num_gps_reads': num_gps_reads,
         }
         if gps_location.sentence_type == 'GGA':
-            print(repr(gps_location))
             timestamp = gps_location.timestamp.isoformat() if gps_location.timestamp else gps_location.timestamp
             packet_params.update({
                 'num_sats': int(gps_location.num_sats),
@@ -93,15 +94,14 @@ def main ():
             transmitter.send(crazy)
             if gps_location.sentence_type in ("GLL", "GSA", "RMC", "GSV", "VTG"):
                 # either the initial config of the ublox didn't work, or it's been reset.
-                # In theory, closing the uart should block until it's done spooling data.
+                # closing the uart should block until it's done spooling data.
                 transmitter.send("%s: Re-configuring ublox...\n" % callsign)
                 transmitter.close_uart()
-                print("UART closed, go batman go")
+                print("UART closed, go go go")
                 configure_ublox()
                 transmitter.open_uart()
             continue
         packet = packet_template.format(**packet_params)
-        # TODO: CHECKSUM!
         checksum = crc16f(packet.encode('ascii'))
         sentence = sentence_template.format(packet, checksum)
         print("")
