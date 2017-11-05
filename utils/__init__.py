@@ -9,3 +9,6 @@ def enable_relay_uart_to_gps():
 
 def disable_relay_uart_to_gps():
     wiringpi.digitalWrite(gps_uart_relay_gpio_pin, 1)
+
+def print_status_char(character):
+    print(character, end='', flush=True)

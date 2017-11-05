@@ -52,17 +52,17 @@ def main():
             num_gps_reads += 1
             gps_location = py_ublox_i2c.read.read_gps(ublox_i2c_address)
         except py_ublox_i2c.read.BadDataException:
-            print("!", end="")
+            utils.print_status_char("!")
             time.sleep(0.5)
             continue
         except KeyError:
-            print("K", end="")
+            utils.print_status_char("K")
         except IOError:
-            print("I", end="")
+            utils.print_status_char("I")
         except pynmea2.nmea.ParseError:
-            print("P", end="")
+            utils.print_status_char("P")
         if not gps_location:
-            print(".", end="")
+            utils.print_status_char(".")
             time.sleep(0.5)
             continue
         packet_params = {
