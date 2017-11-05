@@ -20,7 +20,7 @@ crc16f = crcmod.predefined.mkCrcFun('crc-ccitt-false')
 coordinate_precision = 6
         
 operational_packet_template = "{callsign},{time},{lat},{lon},{alt},{num_sats},{num_gps_reads}"
-no_fix_packet_template = "{callsign},NOFIX,{time},{lat},{lon},{num_sats},{uptime}"
+no_fix_packet_template = "{callsign},NOFIX,{time},{num_sats},{num_gps_reads},{uptime}"
 # TODO: should I send \r\n or can we just all be unix friends from now on?
 sentence_template = "$${0}*{1:X}\n"
 
@@ -71,11 +71,9 @@ def main ():
             'num_gps_reads': num_gps_reads,
         }
         if gps_location.sentence_type == 'GGA':
-            timestamp = gps_location.timestamp.isoformat() if gps_location.timestamp else gps_location.timestamp
+            timestamp = gps_location.timestamp.isoformat() if gps_location.timestamp else "00:00:00"
             packet_params.update({
                 'num_sats': int(gps_location.num_sats),
-                'lat': round(gps_location.latitude, coordinate_precision), # FIXME: what does dl-fldigi require? see serenity code.
-                'lon': round(gps_location.longitude, coordinate_precision),
                 'time': timestamp,
             })
             if gps_location.gps_qual == 0:
@@ -87,6 +85,8 @@ def main ():
                 packet_template = operational_packet_template
                 packet_params.update({
                     'alt': int(round(gps_location.altitude, 0)),
+                    'lat': round(gps_location.latitude, coordinate_precision), # FIXME: what does dl-fldigi require? see serenity code.
+                    'lon': round(gps_location.longitude, coordinate_precision),
                 })
         else:
             # Oh shit, the GPS is sending things I don't know how to handle, so TX it as-is and move on
