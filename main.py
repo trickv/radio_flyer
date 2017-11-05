@@ -19,8 +19,8 @@ crc16f = crcmod.predefined.mkCrcFun('crc-ccitt-false')
 
 coordinate_precision = 6
         
-operational_packet_template = "{callsign},{time},{lat},{lon},{alt},{num_sats},{num_gps_reads}"
-no_fix_packet_template = "{callsign},NOFIX,{time},{num_sats},{num_gps_reads},{uptime}"
+operational_packet_template = "{callsign},{seq},{time},{lat},{lon},{alt},{num_sats},{num_gps_reads}"
+no_fix_packet_template = "{callsign},{seq},NOFIX,{time},{num_sats},{num_gps_reads},{uptime}"
 # TODO: should I send \r\n or can we just all be unix friends from now on?
 sentence_template = "$${0}*{1:X}\n"
 
@@ -35,7 +35,7 @@ def configure_ublox():
     utils.disable_relay_uart_to_gps()
 
 def main ():
-    # read state from disk, if this is mid flight?
+    sequence = 0
     configure_ublox()
     transmitter = transmitter_class.Transmitter()
     transmitter.open_uart()
@@ -45,7 +45,6 @@ def main ():
     py_ublox_i2c.read.connect_bus()
     num_gps_reads = 0
     while True:
-        # save state
         # read bme280
         # take photo - maybe in another process?
         gps_location = None
@@ -68,6 +67,7 @@ def main ():
             continue
         packet_params = {
             'callsign': callsign,
+            'seq': sequence,
             'num_gps_reads': num_gps_reads,
         }
         if gps_location.sentence_type == 'GGA':
@@ -107,6 +107,7 @@ def main ():
         print("")
         transmitter.send(sentence)
         num_gps_reads = 0
+        sequence += 1
 
 
 if __name__ == "__main__":
