@@ -29,28 +29,6 @@ def main ():
         # save state
         # read bme280
         # take photo - maybe in another process?
-        """
-LINE: $GNGGA,003156.00,,,,,0,00,99.99,,,,,,*79
-TX: RADIOFLYER,0.0,0.0,None
-
-LINE: $GNGLL,,,,,003156.00,V,N*55
-Traceback (most recent call last):
-  File "/home/pi/radio_flyer/env/lib/python3.4/site-packages/pynmea2/nmea.py", line 153, in __getattr__
-    i = t.name_to_idx[name]
-KeyError: 'altitude'
-
-During handling of the above exception, another exception occurred:
-
-Traceback (most recent call last):
-  File "./main.py", line 45, in <module>
-    main()
-  File "./main.py", line 37, in main
-    sentence.append(str(gps_location.altitude))
-  File "/home/pi/radio_flyer/env/lib/python3.4/site-packages/pynmea2/nmea.py", line 155, in __getattr__
-    raise AttributeError(name)
-AttributeError: altitude
-
-        """
         gps_location = None
         try:
             num_gps_reads += 1
