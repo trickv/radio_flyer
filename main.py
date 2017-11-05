@@ -15,8 +15,9 @@ BUS = None
 
 coordinate_precision = 6
         
+packet_template = "{callsign},{time},{lat},{lon},{alt},{num_sats},{num_gps_reads},{status}"
 # TODO: should I send \r\n or can we just all be unix friends from now on?
-sentence_template = "{callsign},{time},{lat},{lon},{alt},{num_sats},{num_gps_reads},{status}\n"
+sentence_template = "$${0}*{1:x}\n"
 
 def main ():
     # read state from disk, if this is mid flight?
@@ -51,12 +52,12 @@ def main ():
             print(".", end="")
             time.sleep(0.5)
             continue
-        sentence_params = {
+        packet_params = {
             'callsign': callsign,
             'num_gps_reads': num_gps_reads,
         }
         if gps_location.sentence_type == 'GGA':
-            sentence_params.update({
+            packet_params.update({
                 'time': gps_location.timestamp.isoformat(),
                 'lat': round(gps_location.latitude, coordinate_precision), # FIXME: what does dl-fldigi require? see serenity code.
                 'lon': round(gps_location.longitude, coordinate_precision),
@@ -65,14 +66,16 @@ def main ():
             })
         else:
             # Oh shit, the GPS is sending things I don't know how to handle, so TX it as-is and move on
-            crazy = "%s: Crazy GPS data: %s %s" % (callsign, gps_location, repr(gps_location))
-            transmitter.send_sentence(crazy)
+            crazy = "%s: Unexpected GPS data: %s %s\n" % (callsign, gps_location, repr(gps_location))
+            transmitter.send(crazy)
             continue
-        sentence_params.update({'status': "'".join(status)})
-        sentence_string = sentence_template.format(**sentence_params)
+        packet_params.update({'status': "'".join(status)})
+        packet_string = packet_template.format(**packet_params)
         # TODO: CHECKSUM!
+        checksum = 1234
+        sentence = sentence_template.format(packet_string, checksum)
         print("")
-        transmitter.send_sentence(sentence_string)
+        transmitter.send(sentence)
         num_gps_reads = 0
         status = []
 
