@@ -3,6 +3,8 @@
 import time
 
 import pynmea2
+import crcmod
+
 import py_ublox_i2c.read
 import py_ublox_i2c.configure_serial
 import utils
@@ -12,6 +14,8 @@ callsign = "RADIOFLYER"
 
 ublox_i2c_address = 0x42 # FIXME should be in lib
 BUS = None
+
+crc16f = crcmod.predefined.mkCrcFun('crc-ccitt-false')
 
 coordinate_precision = 6
         
@@ -70,10 +74,10 @@ def main ():
             transmitter.send(crazy)
             continue
         packet_params.update({'status': "'".join(status)})
-        packet_string = packet_template.format(**packet_params)
+        packet = packet_template.format(**packet_params)
         # TODO: CHECKSUM!
-        checksum = 1234
-        sentence = sentence_template.format(packet_string, checksum)
+        checksum = crc16f(packet.encode('ascii'))
+        sentence = sentence_template.format(packet, checksum)
         print("")
         transmitter.send(sentence)
         num_gps_reads = 0
