@@ -25,5 +25,5 @@ class Transmitter():
                                   self.rtty_parity, self.rtty_stopbits)
 
     def send_sentence(self, sentence):
-        print("TX: {0}".format(sentence))
+        print("TX: {0}".format(sentence), end="")
         self.uart.write(sentence.encode('ascii'))
