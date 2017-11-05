@@ -24,6 +24,7 @@ def main ():
     # open i2c (?)
     py_ublox_i2c.read.connect_bus()
     status = []
+    num_gps_reads = 0
     while True:
         # save state
         # read bme280
@@ -52,7 +53,12 @@ AttributeError: altitude
         """
         gps_location = None
         try:
+            num_gps_reads += 1
             gps_location = py_ublox_i2c.read.read_gps(ublox_i2c_address)
+        except py_ublox_i2c.read.BadDataException:
+            print("bad data from gps")
+            time.sleep(0.5)
+            continue
         except KeyError:
             status.append("KeyError on read_gps: %s;" % exception)
         except IOError as exception:
@@ -60,16 +66,17 @@ AttributeError: altitude
         except pynmea2.nmea.ParseError as exception:
             status.append("ParseError on read_gps: %s;" % exception)
         if not gps_location:
-            print("no fix?")
+            print("no data from gps")
             time.sleep(0.5)
             continue
         sentence = [callsign]
-        if gps_location.sentence_type != 'GGA':
-            sentence.append(str(gps_location.timestamp.isoformat())
-            sentence.append(str(gps_location.latitude))
+        if gps_location.sentence_type == 'GGA':
+            sentence.append(str(gps_location.timestamp.isoformat()))
+            sentence.append(str(gps_location.latitude)) # FIXME: precision; also what does dl-fldigi require? see serenity code.
             sentence.append(str(gps_location.longitude))
             sentence.append(str(gps_location.altitude))
             sentence.append(str(int(gps_location.num_sats)))
+            sentence.append(str(num_gps_reads))
         else:
             sentence.append("0")
             sentence.append("0")
@@ -79,9 +86,10 @@ AttributeError: altitude
             status.append("gps_location type %s" % gps_location.sentence_type)
         sentence.append(";".join(status))
         sentence_string = ",".join(sentence)
-        # CHECKSUM!
+        # TODO: CHECKSUM!
         sentence_string += "\n"
         transmitter.send_sentence(sentence_string)
+        num_gps_reads = 0
         status = []
 
 
