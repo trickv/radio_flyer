@@ -2,7 +2,6 @@
 
 import time
 import smbus
-import pynmea2
 
 BUS = None
 I2C_ADDRESS = 0x42
