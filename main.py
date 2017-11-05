@@ -19,9 +19,9 @@ crc16f = crcmod.predefined.mkCrcFun('crc-ccitt-false')
 
 coordinate_precision = 6
         
-packet_template = "{callsign},{time},{lat},{lon},{alt},{num_sats},{num_gps_reads},{status}"
+packet_template = "{callsign},{time},{lat},{lon},{alt},{num_sats},{num_gps_reads}"
 # TODO: should I send \r\n or can we just all be unix friends from now on?
-sentence_template = "$${0}*{1:x}\n"
+sentence_template = "$${0}*{1:X}\n"
 
 def main ():
     # read state from disk, if this is mid flight?
@@ -32,7 +32,6 @@ def main ():
     transmitter.open_uart()
     transmitter.enable_tx()
     py_ublox_i2c.read.connect_bus()
-    status = []
     num_gps_reads = 0
     while True:
         # save state
@@ -46,12 +45,12 @@ def main ():
             print("!", end="")
             time.sleep(0.5)
             continue
-        except KeyError:
-            status.append("KeyError on read_gps: %s;" % exception)
+        except KeyError as exception:
+            print(exception)
         except IOError as exception:
-            status.append("IOError on read_gps: %s;" % exception)
+            print(exception)
         except pynmea2.nmea.ParseError as exception:
-            status.append("ParseError on read_gps: %s;" % exception)
+            print(exception)
         if not gps_location:
             print(".", end="")
             time.sleep(0.5)
@@ -73,7 +72,6 @@ def main ():
             crazy = "%s: Unexpected GPS data: %s %s\n" % (callsign, gps_location, repr(gps_location))
             transmitter.send(crazy)
             continue
-        packet_params.update({'status': "'".join(status)})
         packet = packet_template.format(**packet_params)
         # TODO: CHECKSUM!
         checksum = crc16f(packet.encode('ascii'))
@@ -81,7 +79,6 @@ def main ():
         print("")
         transmitter.send(sentence)
         num_gps_reads = 0
-        status = []
 
 
 if __name__ == "__main__":
