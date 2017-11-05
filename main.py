@@ -45,8 +45,8 @@ def main ():
     py_ublox_i2c.read.connect_bus()
     num_gps_reads = 0
     while True:
-        # read bme280
-        # take photo - maybe in another process?
+        # TODO: read bme280
+        # TODO: take photo - maybe in another process?
         gps_location = None
         try:
             num_gps_reads += 1
