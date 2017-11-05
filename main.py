@@ -21,7 +21,6 @@ def main ():
     transmitter = transmitter_class.Transmitter()
     transmitter.open_uart()
     transmitter.enable_tx()
-    # open i2c (?)
     py_ublox_i2c.read.connect_bus()
     status = []
     num_gps_reads = 0
