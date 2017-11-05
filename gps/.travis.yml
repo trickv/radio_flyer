@@ -11,4 +11,4 @@ install:
   - pip install -r requirements.pip
 
 script:
-  - pylint --disable superfluous-parens --disable line-too-long --disable fixme --disable global-statement --disable missing-docstring *.py
+  - pylint --disable superfluous-parens --disable line-too-long --disable fixme --disable global-statement --disable missing-docstring --disable duplicate-code *.py
