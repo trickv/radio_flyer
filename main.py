@@ -19,9 +19,15 @@ crc16f = crcmod.predefined.mkCrcFun('crc-ccitt-false')
 
 coordinate_precision = 6
         
-packet_template = "{callsign},{time},{lat},{lon},{alt},{num_sats},{num_gps_reads}"
+operational_packet_template = "{callsign},{time},{lat},{lon},{alt},{num_sats},{num_gps_reads}"
+no_fix_packet_template = "{callsign},NOFIX,{time},{lat},{lon},{num_sats},{uptime}"
 # TODO: should I send \r\n or can we just all be unix friends from now on?
 sentence_template = "$${0}*{1:X}\n"
+
+def uptime():  
+    with open('/proc/uptime', 'r') as uptime_file:
+        uptime = int(float(uptime_file.readline().split()[0]))
+        return uptime
 
 def main ():
     # read state from disk, if this is mid flight?
@@ -60,16 +66,27 @@ def main ():
             'num_gps_reads': num_gps_reads,
         }
         if gps_location.sentence_type == 'GGA':
+            print(repr(gps_location))
+            timestamp = gps_location.timestamp.isoformat() if gps_location.timestamp else gps_location.timestamp
             packet_params.update({
-                'time': gps_location.timestamp.isoformat(),
+                'num_sats': int(gps_location.num_sats),
                 'lat': round(gps_location.latitude, coordinate_precision), # FIXME: what does dl-fldigi require? see serenity code.
                 'lon': round(gps_location.longitude, coordinate_precision),
-                'alt': int(round(gps_location.altitude, 0)),
-                'num_sats': int(gps_location.num_sats),
+                'time': timestamp,
             })
+            if gps_location.gps_qual == 0:
+                packet_template = no_fix_packet_template
+                packet_params.update({
+                    'uptime': uptime()
+                })
+            else:
+                packet_template = operational_packet_template
+                packet_params.update({
+                    'alt': int(round(gps_location.altitude, 0)),
+                })
         else:
             # Oh shit, the GPS is sending things I don't know how to handle, so TX it as-is and move on
-            crazy = "%s: Unexpected GPS data: %s %s\n" % (callsign, gps_location, repr(gps_location))
+            crazy = "%s: Unexpected GPS data: %s\n" % (callsign, gps_location)
             transmitter.send(crazy)
             continue
         packet = packet_template.format(**packet_params)
