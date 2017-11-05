@@ -18,23 +18,23 @@ BUS = None
 crc16f = crcmod.predefined.mkCrcFun('crc-ccitt-false')
 
 coordinate_precision = 6
-        
+
 operational_packet_template = "{callsign},{seq},{time},{lat},{lon},{alt},{num_sats},{num_gps_reads}"
 no_fix_packet_template = "{callsign},{seq},NOFIX,{time},{num_sats},{num_gps_reads},{uptime}"
 # TODO: should I send \r\n or can we just all be unix friends from now on?
 sentence_template = "$${0}*{1:X}\n"
 
-def uptime():  
+def uptime():
     with open('/proc/uptime', 'r') as uptime_file:
-        uptime = int(float(uptime_file.readline().split()[0]))
-        return uptime
+        uptime_int = int(float(uptime_file.readline().split()[0]))
+        return uptime_int
 
 def configure_ublox():
     utils.enable_relay_uart_to_gps()
     py_ublox_i2c.configure_serial.configure_for_flight()
     utils.disable_relay_uart_to_gps()
 
-def main ():
+def main():
     sequence = 0
     configure_ublox()
     transmitter = transmitter_class.Transmitter()
@@ -55,11 +55,11 @@ def main ():
             print("!", end="")
             time.sleep(0.5)
             continue
-        except KeyError as exception:
+        except KeyError:
             print("K", end="")
-        except IOError as exception:
+        except IOError:
             print("I", end="")
-        except pynmea2.nmea.ParseError as exception:
+        except pynmea2.nmea.ParseError:
             print("P", end="")
         if not gps_location:
             print(".", end="")
@@ -89,11 +89,11 @@ def main ():
                     'lon': round(gps_location.longitude, coordinate_precision),
                 })
         else:
-            # Oh shit, the GPS is sending things I don't know how to handle, so TX it as-is and move on
+            # Oh shit, the GPS is sending things I don't know how to handle
             crazy = "%s: Unexpected GPS data: %s\n" % (callsign, gps_location)
             transmitter.send(crazy)
             if gps_location.sentence_type in ("GLL", "GSA", "RMC", "GSV", "VTG"):
-                # either the initial config of the ublox didn't work, or it's been reset.
+                # either the initial config of the ublox didn't work, or it's been reset/rebooted.
                 # closing the uart should block until it's done spooling data.
                 transmitter.send("%s: Re-configuring ublox...\n" % callsign)
                 transmitter.close_uart()
