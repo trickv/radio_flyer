@@ -11,7 +11,14 @@ def _open_serial():
 
 def configure_for_flight():
     gps_serial = _open_serial()
+    import time
+    time.sleep(1)
+    gps_serial.write(("\r\n" * 5).encode('ascii'))
+    time.sleep(1)
     disable_excessive_reports(gps_serial)
+    time.sleep(1)
+    gps_serial.write(("\r\n" * 5).encode('ascii'))
+    time.sleep(1)
     gps_serial.close()
 
 
