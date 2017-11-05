@@ -29,11 +29,14 @@ def uptime():
         uptime = int(float(uptime_file.readline().split()[0]))
         return uptime
 
-def main ():
-    # read state from disk, if this is mid flight?
+def configure_ublox():
     utils.enable_relay_uart_to_gps()
     py_ublox_i2c.configure_serial.configure_for_flight()
     utils.disable_relay_uart_to_gps()
+
+def main ():
+    # read state from disk, if this is mid flight?
+    configure_ublox()
     transmitter = transmitter_class.Transmitter()
     transmitter.open_uart()
     transmitter.enable_tx()
@@ -88,6 +91,14 @@ def main ():
             # Oh shit, the GPS is sending things I don't know how to handle, so TX it as-is and move on
             crazy = "%s: Unexpected GPS data: %s\n" % (callsign, gps_location)
             transmitter.send(crazy)
+            if gps_location.sentence_type in ("GLL", "GSA", "RMC", "GSV", "VTG"):
+                # either the initial config of the ublox didn't work, or it's been reset.
+                # In theory, closing the uart should block until it's done spooling data.
+                transmitter.send("%s: Re-configuring ublox...\n" % callsign)
+                transmitter.close_uart()
+                print("UART closed, go batman go")
+                configure_ublox()
+                transmitter.open_uart()
             continue
         packet = packet_template.format(**packet_params)
         # TODO: CHECKSUM!

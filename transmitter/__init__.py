@@ -24,6 +24,10 @@ class Transmitter():
                                   self.rtty_baud, self.rtty_bits,
                                   self.rtty_parity, self.rtty_stopbits)
 
+    def close_uart(self):
+        self.uart.close()
+        self.uart = None
+
     def send(self, string):
         print("TX: {0}".format(string), end="")
         self.uart.write(string.encode('ascii'))
