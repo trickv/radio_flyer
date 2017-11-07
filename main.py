@@ -95,7 +95,8 @@ def main():
             if gps_location.sentence_type in ("GLL", "GSA", "RMC", "GSV", "VTG"):
                 # either the initial config of the ublox didn't work, or it's been reset/rebooted.
                 # closing the uart should block until it's done spooling data.
-                transmitter.send("%s: Re-configuring ublox...\n" % callsign)
+                transmitter.send("%s: Re-configuring ublox in 10 seconds.\n" % callsign)
+                time.sleep(10)
                 transmitter.close_uart()
                 print("UART closed, go go go")
                 configure_ublox()
