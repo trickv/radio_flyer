@@ -4,3 +4,4 @@ smbus-cffi
 pylint
 pynmea2
 crcmod
+picamera

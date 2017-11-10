@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 
 import time
+import os
+import subprocess
 
 import pynmea2
 import crcmod
+import picamera
 
 import py_ublox_i2c.read
 import py_ublox_i2c.configure_serial
@@ -34,8 +37,26 @@ def configure_ublox():
     py_ublox_i2c.configure_serial.configure_for_flight()
     utils.disable_relay_uart_to_gps()
 
+def camera_output_directory():
+    # FIXME: this should be randomized to prevent multiple boots from overwriting
+    directory = "/home/pi/photos/0"
+    os.makedirs(directory, exist_ok = True) # Python >= 3.2 exist_ok flag
+    return directory
+
+def camera_take_photo(packet_data, camera_output_directory):
+    filename = "{0}/{1}-{2}.jpg".format(camera_output_directory, packet_data['seq'], packet_data['time'])
+    subprocess.call(["raspistill", "-o", filename])
+
+def __picamera_broken_camera_take_photo(packet_data, camera_output_directory):
+    camera = picamera.PiCamera() # TODO: should this be a class variable and persistent?
+    camera.resolution = (1024, 768)
+    camera.start_preview()
+    time.sleep(2) # TODO: from the Basic Examples of picam; on my kite I use 5
+    camera.capture("{0}/{1}-{2}.jpg".format(camera_output_directory, packet_data['seq'], packet_data['time']))
+
 def main():
     sequence = 0
+    cam_out_dir = camera_output_directory()
     configure_ublox()
     transmitter = transmitter_class.Transmitter()
     transmitter.open_uart()
@@ -46,7 +67,6 @@ def main():
     num_gps_reads = 0
     while True:
         # TODO: read bme280
-        # TODO: take photo - maybe in another process?
         gps_location = None
         try:
             num_gps_reads += 1
@@ -106,6 +126,7 @@ def main():
         checksum = crc16f(packet.encode('ascii'))
         sentence = sentence_template.format(packet, checksum)
         print("")
+        camera_take_photo(packet_params, cam_out_dir)
         transmitter.send(sentence)
         num_gps_reads = 0
         sequence += 1
