@@ -53,16 +53,18 @@ def camera_output_directory():
     os.makedirs(directory, exist_ok = True) # Python >= 3.2 exist_ok flag
     return directory
 
-def camera_take_photo(packet_data, camera_output_directory):
+def __raspistill_camera_take_photo(packet_data, camera_output_directory):
     filename = "{0}/{1}-{2}.jpg".format(camera_output_directory, packet_data['seq'], packet_data['time'])
     subprocess.call(["raspistill", "-o", filename])
 
-def __picamera_broken_camera_take_photo(packet_data, camera_output_directory):
-    camera = picamera.PiCamera() # TODO: should this be a class variable and persistent?
+def camera_take_photo(camera, packet_data, camera_output_directory):
     camera.resolution = (1024, 768)
     camera.start_preview()
     time.sleep(2) # TODO: from the Basic Examples of picam; on my kite I use 5
-    camera.capture("{0}/{1}-{2}.jpg".format(camera_output_directory, packet_data['seq'], packet_data['time']))
+    output_file = "{0}/{1}-{2}.jpg".format(camera_output_directory, packet_data['seq'], packet_data['time'])
+    if os.path.exists(output_file):
+        print("output file %s exists, skipping" % output_file)
+    camera.capture(output_file)
 
 def setup_bme280():
     bme280_i2c.set_default_bus(1)
@@ -72,6 +74,7 @@ def setup_bme280():
 def main():
     sequence = 0
     cam_out_dir = camera_output_directory()
+    camera = picamera.PiCamera()
     configure_ublox()
     transmitter = transmitter_class.Transmitter()
     transmitter.open_uart()
@@ -145,7 +148,7 @@ def main():
         checksum = crc16f(packet.encode('ascii'))
         sentence = sentence_template.format(packet, checksum)
         print("")
-        camera_take_photo(packet_params, cam_out_dir)
+        camera_take_photo(camera, packet_params, cam_out_dir)
         transmitter.send(sentence)
         num_gps_reads = 0
         sequence += 1
