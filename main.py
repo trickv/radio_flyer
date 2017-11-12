@@ -39,8 +39,17 @@ def configure_ublox():
     utils.disable_relay_uart_to_gps()
 
 def camera_output_directory():
-    # FIXME: this should be randomized to prevent multiple boots from overwriting
-    directory = "/home/pi/photos/0"
+    base_directory = "/home/pi/photos/"
+    max_index = 0
+    for directory in os.listdir(base_directory):
+        try:
+            current = int(directory)
+        except ValueError:
+            continue
+        if current > max_index:
+            max_index = current
+    directory = base_directory + str(max_index + 1)
+    print("Camera: Output dir set to %s" % directory)
     os.makedirs(directory, exist_ok = True) # Python >= 3.2 exist_ok flag
     return directory
 
