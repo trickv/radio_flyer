@@ -58,13 +58,16 @@ def __raspistill_camera_take_photo(packet_data, camera_output_directory):
     subprocess.call(["raspistill", "-o", filename])
 
 def camera_take_photo(camera, packet_data, camera_output_directory):
-    camera.resolution = (1024, 768)
-    camera.start_preview()
-    time.sleep(2) # TODO: from the Basic Examples of picam; on my kite I use 5
+    camera = picamera.PiCamera()
     output_file = "{0}/{1}-{2}.jpg".format(camera_output_directory, packet_data['seq'], packet_data['time'])
     if os.path.exists(output_file):
         print("output file %s exists, skipping" % output_file)
+        return
+    camera.resolution = (3280, 2464) # max resolution for v2 sensor
+    camera.start_preview()
+    time.sleep(2)
     camera.capture(output_file)
+    camera.close() # This turns the camera off, saving power between shots
 
 def setup_bme280():
     bme280_i2c.set_default_bus(1)
@@ -74,7 +77,6 @@ def setup_bme280():
 def main():
     sequence = 0
     cam_out_dir = camera_output_directory()
-    camera = picamera.PiCamera()
     configure_ublox()
     transmitter = transmitter_class.Transmitter()
     transmitter.open_uart()
