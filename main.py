@@ -7,6 +7,7 @@ import subprocess
 import pynmea2
 import crcmod
 import picamera
+from bme280 import bme280, bme280_i2c
 
 import py_ublox_i2c.read
 import py_ublox_i2c.configure_serial
@@ -22,8 +23,8 @@ crc16f = crcmod.predefined.mkCrcFun('crc-ccitt-false')
 
 coordinate_precision = 6
 
-operational_packet_template = "{callsign},{seq},{time},{lat},{lon},{alt},{num_sats},{num_gps_reads}"
-no_fix_packet_template = "{callsign},{seq},NOFIX,{time},{num_sats},{num_gps_reads},{uptime}"
+operational_packet_template = "{callsign},{seq},{time},{lat},{lon},{alt},{num_sats},{num_gps_reads},{temperature},{pressure},{humidity}"
+no_fix_packet_template = "{callsign},{seq},NOFIX,{time},{num_sats},{num_gps_reads},{temperature},{pressure},{humidity},{uptime}"
 # TODO: should I send \r\n or can we just all be unix friends from now on?
 sentence_template = "$${0}*{1:X}\n"
 
@@ -54,6 +55,11 @@ def __picamera_broken_camera_take_photo(packet_data, camera_output_directory):
     time.sleep(2) # TODO: from the Basic Examples of picam; on my kite I use 5
     camera.capture("{0}/{1}-{2}.jpg".format(camera_output_directory, packet_data['seq'], packet_data['time']))
 
+def setup_bme280():
+    bme280_i2c.set_default_bus(1)
+    bme280_i2c.set_default_i2c_address(0x76)
+    bme280.setup()
+
 def main():
     sequence = 0
     cam_out_dir = camera_output_directory()
@@ -64,9 +70,9 @@ def main():
     transmitter.send("Worlds best tracker software. Buy bitcoin!\n\n")
     transmitter.send("Thanks to my lovely wife Sarah.\n\n")
     py_ublox_i2c.read.connect_bus()
+    setup_bme280()
     num_gps_reads = 0
     while True:
-        # TODO: read bme280
         gps_location = None
         try:
             num_gps_reads += 1
@@ -85,10 +91,14 @@ def main():
             utils.print_status_char(".")
             time.sleep(0.5)
             continue
+        bme280_data = bme280.read_all()
         packet_params = {
             'callsign': callsign,
             'seq': sequence,
             'num_gps_reads': num_gps_reads,
+            'temperature': round(bme280_data.temperature, 2),
+            'humidity': round(bme280_data.humidity, 2),
+            'pressure': round(bme280_data.pressure, 2),
         }
         if gps_location.sentence_type == 'GGA':
             timestamp = gps_location.timestamp.isoformat() if gps_location.timestamp else "00:00:00"
