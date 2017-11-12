@@ -6,13 +6,13 @@ import subprocess
 
 import pynmea2
 import crcmod
-import picamera
 from bme280 import bme280, bme280_i2c
 
 import py_ublox_i2c.read
 import py_ublox_i2c.configure_serial
 import utils
 import transmitter as transmitter_class
+import camera as camera_class
 
 callsign = "RADIOFLYER"
 
@@ -38,36 +38,6 @@ def configure_ublox():
     py_ublox_i2c.configure_serial.configure_for_flight()
     utils.disable_relay_uart_to_gps()
 
-def camera_output_directory():
-    base_directory = "/home/pi/photos/"
-    max_index = 0
-    for directory in os.listdir(base_directory):
-        try:
-            current = int(directory)
-        except ValueError:
-            continue
-        if current > max_index:
-            max_index = current
-    directory = base_directory + str(max_index + 1)
-    print("Camera: Output dir set to %s" % directory)
-    os.makedirs(directory, exist_ok = True) # Python >= 3.2 exist_ok flag
-    return directory
-
-def __raspistill_camera_take_photo(packet_data, camera_output_directory):
-    filename = "{0}/{1}-{2}.jpg".format(camera_output_directory, packet_data['seq'], packet_data['time'])
-    subprocess.call(["raspistill", "-o", filename])
-
-def camera_take_photo(camera, packet_data, camera_output_directory):
-    camera = picamera.PiCamera()
-    output_file = "{0}/{1}-{2}.jpg".format(camera_output_directory, packet_data['seq'], packet_data['time'])
-    if os.path.exists(output_file):
-        print("output file %s exists, skipping" % output_file)
-        return
-    camera.resolution = (3280, 2464) # max resolution for v2 sensor
-    camera.start_preview()
-    time.sleep(2)
-    camera.capture(output_file)
-    camera.close() # This turns the camera off, saving power between shots
 
 def setup_bme280():
     bme280_i2c.set_default_bus(1)
@@ -76,8 +46,8 @@ def setup_bme280():
 
 def main():
     sequence = 0
-    cam_out_dir = camera_output_directory()
     configure_ublox()
+    camera = camera_class.Camera()
     transmitter = transmitter_class.Transmitter()
     transmitter.open_uart()
     transmitter.enable_tx()
@@ -150,7 +120,7 @@ def main():
         checksum = crc16f(packet.encode('ascii'))
         sentence = sentence_template.format(packet, checksum)
         print("")
-        camera_take_photo(camera, packet_params, cam_out_dir)
+        camera.take_photo(packet_params)
         transmitter.send(sentence)
         num_gps_reads = 0
         sequence += 1
