@@ -28,11 +28,6 @@ no_fix_packet_template = "{callsign},{seq},NOFIX,{time},{num_sats},{num_gps_read
 # TODO: should I send \r\n or can we just all be unix friends from now on?
 sentence_template = "$${0}*{1:X}\n"
 
-def uptime():
-    with open('/proc/uptime', 'r') as uptime_file:
-        uptime_int = int(float(uptime_file.readline().split()[0]))
-        return uptime_int
-
 def configure_ublox():
     utils.enable_relay_uart_to_gps()
     py_ublox_i2c.configure_serial.configure_for_flight()
@@ -93,7 +88,7 @@ def main():
             if gps_location.gps_qual == 0:
                 packet_template = no_fix_packet_template
                 packet_params.update({
-                    'uptime': uptime()
+                    'uptime': utils.uptime()
                 })
             else:
                 packet_template = operational_packet_template
