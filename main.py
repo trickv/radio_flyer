@@ -13,15 +13,9 @@ import py_ublox_i2c.configure_serial
 import utils
 import transmitter as transmitter_class
 import camera as camera_class
+from conf import conf
 
-callsign = "RADIOFLYER"
-
-ublox_i2c_address = 0x42 # FIXME should be in lib
-BUS = None
-
-crc16f = crcmod.predefined.mkCrcFun('crc-ccitt-false')
-
-coordinate_precision = 6
+BUS = None # FIXME I don't think this is needed here, it's a global from within the ublox lib
 
 operational_packet_template = "{callsign},{seq},{time},{lat},{lon},{alt},{num_sats},{num_gps_reads},{temperature},{pressure},{humidity}"
 no_fix_packet_template = "{callsign},{seq},NOFIX,{time},{num_sats},{num_gps_reads},{temperature},{pressure},{humidity},{uptime}"
@@ -41,6 +35,7 @@ def setup_bme280():
 
 def main():
     sequence = 0
+    utils.print_conf(conf)
     configure_ublox()
     camera = camera_class.Camera()
     transmitter = transmitter_class.Transmitter()
@@ -48,12 +43,14 @@ def main():
     transmitter.send("Thanks to my lovely wife Sarah.\n\n")
     py_ublox_i2c.read.connect_bus()
     setup_bme280()
+    crc16f = crcmod.predefined.mkCrcFun('crc-ccitt-false')
+
     num_gps_reads = 0
     while True:
         gps_location = None
         try:
             num_gps_reads += 1
-            gps_location = py_ublox_i2c.read.read_gps(ublox_i2c_address)
+            gps_location = py_ublox_i2c.read.read_gps(conf.ublox_i2c_address)
         except py_ublox_i2c.read.BadDataException:
             utils.print_status_char("!")
             time.sleep(0.5)
@@ -70,7 +67,7 @@ def main():
             continue
         bme280_data = bme280.read_all()
         packet_params = {
-            'callsign': callsign,
+            'callsign': conf.callsign,
             'seq': sequence,
             'num_gps_reads': num_gps_reads,
             'temperature': round(bme280_data.temperature, 2),
@@ -92,8 +89,8 @@ def main():
                 packet_template = operational_packet_template
                 packet_params.update({
                     'alt': int(round(gps_location.altitude, 0)),
-                    'lat': round(gps_location.latitude, coordinate_precision), # FIXME: what does dl-fldigi require? see serenity code.
-                    'lon': round(gps_location.longitude, coordinate_precision),
+                    'lat': round(gps_location.latitude, conf.coordinate_precision), # FIXME: what does dl-fldigi require? see serenity code.
+                    'lon': round(gps_location.longitude, conf.coordinate_precision),
                 })
         else:
             # Oh shit, the GPS is sending things I don't know how to handle

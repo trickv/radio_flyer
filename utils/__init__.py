@@ -17,3 +17,7 @@ def uptime():
     with open('/proc/uptime', 'r') as uptime_file:
         uptime_int = int(float(uptime_file.readline().split()[0]))
         return uptime_int
+
+def print_conf(conf):
+    print("Tracker startup. Config:")
+    print(conf)
