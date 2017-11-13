@@ -22,6 +22,7 @@ no_fix_packet_template = "{callsign},{seq},NOFIX,{time},{num_sats},{num_gps_read
 # TODO: should I send \r\n or can we just all be unix friends from now on?
 sentence_template = "$${0}*{1:X}\n"
 
+
 def configure_ublox():
     utils.enable_relay_uart_to_gps()
     py_ublox_i2c.configure_serial.configure_for_flight()
@@ -32,6 +33,7 @@ def setup_bme280():
     bme280_i2c.set_default_bus(1)
     bme280_i2c.set_default_i2c_address(0x76)
     bme280.setup()
+
 
 def main():
     sequence = 0
