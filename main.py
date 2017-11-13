@@ -44,8 +44,6 @@ def main():
     configure_ublox()
     camera = camera_class.Camera()
     transmitter = transmitter_class.Transmitter()
-    transmitter.open_uart()
-    transmitter.enable_tx()
     transmitter.send("Worlds best tracker software. Buy bitcoin!\n\n")
     transmitter.send("Thanks to my lovely wife Sarah.\n\n")
     py_ublox_i2c.read.connect_bus()

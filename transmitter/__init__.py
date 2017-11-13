@@ -12,6 +12,10 @@ class Transmitter():
     rtty_parity = serial.PARITY_NONE
     rtty_stopbits = serial.STOPBITS_TWO
 
+    def __init__(self):
+        self.open_uart()
+        self.enable_tx()
+
     def enable_tx(self):
         wiringpi.wiringPiSetupGpio()
         wiringpi.pinMode(self.enable_gpio_pin, 1)
