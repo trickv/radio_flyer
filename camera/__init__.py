@@ -30,6 +30,16 @@ class Camera():
             print("output file %s exists, skipping" % output_file)
             return
         camera.resolution = (3280, 2464) # max resolution for v2 sensor
+        camera.exif_tags = [
+            'GPS.GPSLatitude': packet_data.lat,
+            'GPS.GPSLongitude': packet_data.lon,
+            'GPS.GPSAltitude': packet_data.alt
+            'GPS.GPSSatellites': packet_data.num_sats,
+            'GPS.GPSTimeStamp': packet_data.time,
+            # 'GPS.GPSDateStamp': packet_data.date, # TODO grab date from GPS before turning off other strings?
+            'EXIF.UserComment': "sequence={seq}, temperature={temperature}, pressure={pressure}, humidity={humidity}".format(packet_data),
+            # TODO: EXIF.DateTimeOriginal and DateTimeDigitized
+            ]
         camera.start_preview()
         time.sleep(2)
         camera.capture(output_file)
