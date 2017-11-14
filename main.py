@@ -37,6 +37,7 @@ def setup_bme280():
 
 def main():
     sequence = 0
+    had_initial_fix = False
     utils.print_conf(conf)
     configure_ublox()
     camera = camera_class.Camera()
@@ -82,12 +83,13 @@ def main():
                 'num_sats': int(gps_location.num_sats),
                 'time': timestamp,
             })
-            if gps_location.gps_qual == 0:
+            if gps_location.gps_qual == 0: # we have no GPS fix
                 packet_template = no_fix_packet_template
                 packet_params.update({
                     'uptime': utils.uptime()
                 })
             else:
+                had_initial_fix = True
                 packet_template = operational_packet_template
                 packet_params.update({
                     'alt': int(round(gps_location.altitude, 0)),
@@ -112,6 +114,8 @@ def main():
         checksum = crc16f(packet.encode('ascii'))
         sentence = sentence_template.format(packet, checksum)
         print("")
+        if not had_initial_fix:
+            transmitter.tx("%s: do not launch yet" % conf['callsign'])
         camera.take_photo(packet_params)
         transmitter.send(sentence)
         num_gps_reads = 0
