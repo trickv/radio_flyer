@@ -21,11 +21,11 @@ class Camera():
         os.makedirs(directory, exist_ok = True) # Python >= 3.2 required for exist_ok flag
         self.output_directory = directory
 
-    def __raspistill_camera_take_photo(packet_data, camera_output_directory):
+    def __raspistill_camera_take_photo(self, packet_data, camera_output_directory):
         filename = "{0}/{1}-{2}.jpg".format(camera_output_directory, packet_data['seq'], packet_data['time'])
         subprocess.call(["raspistill", "-o", filename], timeout=10)
 
-    def take_photo(packet_data):
+    def take_photo(self, packet_data):
         camera = picamera.PiCamera()
         output_file = "{0}/{1}-{2}.jpg".format(self.output_directory, packet_data['seq'], packet_data['time'])
         if os.path.exists(output_file):
