@@ -1,5 +1,7 @@
-import picamera
 import time
+import os
+
+import picamera
 
 class Camera():
     output_directory = None
