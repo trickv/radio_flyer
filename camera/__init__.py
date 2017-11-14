@@ -21,7 +21,7 @@ class Camera():
 
     def __raspistill_camera_take_photo(packet_data, camera_output_directory):
         filename = "{0}/{1}-{2}.jpg".format(camera_output_directory, packet_data['seq'], packet_data['time'])
-        subprocess.call(["raspistill", "-o", filename])
+        subprocess.call(["raspistill", "-o", filename], timeout=10)
 
     def take_photo(packet_data):
         camera = picamera.PiCamera()
