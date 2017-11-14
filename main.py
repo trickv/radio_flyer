@@ -52,7 +52,7 @@ def main():
         gps_location = None
         try:
             num_gps_reads += 1
-            gps_location = py_ublox_i2c.read.read_gps(conf.ublox_i2c_address)
+            gps_location = py_ublox_i2c.read.read_gps(conf['ublox_i2c_address'])
         except py_ublox_i2c.read.BadDataException:
             utils.print_status_char("!")
             time.sleep(0.5)
@@ -69,7 +69,7 @@ def main():
             continue
         bme280_data = bme280.read_all()
         packet_params = {
-            'callsign': conf.callsign,
+            'callsign': conf['callsign'],
             'seq': sequence,
             'num_gps_reads': num_gps_reads,
             'temperature': round(bme280_data.temperature, 2),
@@ -91,8 +91,8 @@ def main():
                 packet_template = operational_packet_template
                 packet_params.update({
                     'alt': int(round(gps_location.altitude, 0)),
-                    'lat': round(gps_location.latitude, conf.coordinate_precision), # FIXME: what does dl-fldigi require? see serenity code.
-                    'lon': round(gps_location.longitude, conf.coordinate_precision),
+                    'lat': round(gps_location.latitude, conf['coordinate_precision']), # FIXME: what does dl-fldigi require? see serenity code.
+                    'lon': round(gps_location.longitude, conf['coordinate_precision']),
                 })
         else:
             # Oh shit, the GPS is sending things I don't know how to handle
