@@ -115,10 +115,10 @@ def main():
         sentence = sentence_template.format(packet, checksum)
         print("")
         if not had_initial_fix:
-            transmitter.tx("%s: do not launch yet" % conf['callsign'])
-        transmitter.tx("CAM: start")
+            transmitter.send("%s: do not launch yet\n" % conf['callsign'])
+        transmitter.send("CAM: start\n")
         camera.take_photo(packet_params)
-        transmitter.tx("CAM: stop")
+        transmitter.send("CAM: stop\n")
         transmitter.send(sentence)
         num_gps_reads = 0
         sequence += 1
