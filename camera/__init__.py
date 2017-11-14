@@ -26,27 +26,31 @@ class Camera():
         subprocess.call(["raspistill", "-o", filename], timeout=10)
 
     def take_photo(self, packet_data):
-        camera = picamera.PiCamera()
         output_file = "{0}/{1}-{2}.jpg".format(self.output_directory, packet_data['seq'], packet_data['time'])
         if os.path.exists(output_file):
             print("output file %s exists, skipping" % output_file)
             return
-        camera.resolution = (3280, 2464) # max resolution for v2 sensor
         try:
-            camera.exif_tags.update({
-                'GPS.GPSLatitude': packet_data['lat'],
-                'GPS.GPSLongitude': packet_data['lon'],
-                'GPS.GPSAltitude': packet_data['alt'],
-                'GPS.GPSSatellites': packet_data['num_sats'],
-                'GPS.GPSTimeStamp': packet_data['time'],
-                # 'GPS.GPSDateStamp': packet_data['date'], # TODO grab date from GPS before turning off other strings?
-                'EXIF.UserComment': "sequence={seq}, temperature={temperature}, pressure={pressure}, humidity={humidity}".format(packet_data),
-                # TODO: EXIF.DateTimeOriginal and DateTimeDigitized
-                })
-        except KeyError:
-            # likely this is during warmup where we don't have a GPS fix. Don't worry about exif.
+            camera = picamera.PiCamera()
+            camera.resolution = (3280, 2464) # max resolution for v2 sensor
+            try:
+                camera.exif_tags.update({
+                    'GPS.GPSLatitude': packet_data['lat'],
+                    'GPS.GPSLongitude': packet_data['lon'],
+                    'GPS.GPSAltitude': packet_data['alt'],
+                    'GPS.GPSSatellites': packet_data['num_sats'],
+                    'GPS.GPSTimeStamp': packet_data['time'],
+                    # 'GPS.GPSDateStamp': packet_data['date'], # TODO grab date from GPS before turning off other strings?
+                    'EXIF.UserComment': "sequence={seq}, temperature={temperature}, pressure={pressure}, humidity={humidity}".format(packet_data),
+                    # TODO: EXIF.DateTimeOriginal and DateTimeDigitized
+                    })
+            except KeyError:
+                # likely this is during warmup where we don't have a GPS fix. Don't worry about exif.
+                pass
+            camera.start_preview()
+            time.sleep(2)
+            camera.capture(output_file)
+            camera.close() # This turns the camera off, saving power between shots
+        except Exception as exception:
+            print("Camera error: {0}".format(exception))
             pass
-        camera.start_preview()
-        time.sleep(2)
-        camera.capture(output_file)
-        camera.close() # This turns the camera off, saving power between shots
