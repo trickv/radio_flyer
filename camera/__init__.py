@@ -6,6 +6,7 @@ import picamera
 class Camera():
     output_directory = None
     camera_ready = False
+    fail_counter = 0
 
     def __init__(self):
         base_directory = "/home/pi/photos/"
@@ -60,5 +61,8 @@ class Camera():
             camera.capture(output_file)
             camera.close() # This turns the camera off, saving power between shots
         except Exception as exception:
-            print("Camera error: {0}".format(exception))
+            self.fail_counter += 1
+            if self.fail_counter > 10:
+                self.camera_ready = False
+            print("Camera error, count {1}: {0}".format(exception, self.fail_counter))
             pass
