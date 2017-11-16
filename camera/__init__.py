@@ -5,6 +5,7 @@ import picamera
 
 class Camera():
     output_directory = None
+    camera_ready = False
 
     def __init__(self):
         base_directory = "/home/pi/photos/"
@@ -18,7 +19,11 @@ class Camera():
                 max_index = current
         directory = base_directory + str(max_index + 1)
         print("Camera: Output dir set to %s" % directory)
-        os.makedirs(directory, exist_ok = True) # Python >= 3.2 required for exist_ok flag
+        try:
+            os.makedirs(directory, exist_ok = True) # Python >= 3.2 required for exist_ok flag
+            self.camera_ready = True
+        except OSError as exception:
+            print("Error while creating camera output dir: %s" % exception)
         self.output_directory = directory
 
     def __raspistill_camera_take_photo(self, packet_data, camera_output_directory):
@@ -26,6 +31,9 @@ class Camera():
         subprocess.call(["raspistill", "-o", filename], timeout=10)
 
     def take_photo(self, packet_data):
+        if not self.camera_ready:
+            print("Camera not ready.")
+            return
         camera = picamera.PiCamera()
         output_file = "{0}/{1}-{2}.jpg".format(self.output_directory, packet_data['seq'], packet_data['time'])
         if os.path.exists(output_file):
