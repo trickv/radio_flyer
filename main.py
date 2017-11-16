@@ -38,10 +38,12 @@ def setup_bme280():
 def main():
     sequence = 0
     had_initial_fix = False
-    utils.print_conf(conf)
     configure_ublox()
     camera = camera_class.Camera()
     transmitter = transmitter_class.Transmitter()
+    rendered_conf = utils.render_conf(conf)
+    print(rendered_conf)
+    transmitter.send(rendered_conf)
     transmitter.send("Worlds best tracker software. Buy bitcoin!\n\n")
     transmitter.send("Thanks to my lovely wife Sarah.\n\n")
     py_ublox_i2c.read.connect_bus()
@@ -116,10 +118,10 @@ def main():
         print("")
         if not had_initial_fix:
             transmitter.send("%s: do not launch yet\n" % conf['callsign'])
+        transmitter.send(sentence)
         transmitter.send("CAM: start\n")
         camera.take_photo(packet_params)
         transmitter.send("CAM: stop\n")
-        transmitter.send(sentence)
         num_gps_reads = 0
         sequence += 1
 

@@ -18,6 +18,5 @@ def uptime():
         uptime_int = int(float(uptime_file.readline().split()[0]))
         return uptime_int
 
-def print_conf(conf):
-    print("Tracker startup. Config:")
-    print(conf)
+def render_conf(conf):
+    return "\n\nTracker startup. Config:\n{0}\n".format(conf)
