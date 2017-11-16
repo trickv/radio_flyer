@@ -116,10 +116,10 @@ def main():
         print("")
         if not had_initial_fix:
             transmitter.send("%s: do not launch yet\n" % conf['callsign'])
+        transmitter.send(sentence)
         transmitter.send("CAM: start\n")
         camera.take_photo(packet_params)
         transmitter.send("CAM: stop\n")
-        transmitter.send(sentence)
         num_gps_reads = 0
         sequence += 1
 
