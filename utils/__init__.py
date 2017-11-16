@@ -19,4 +19,4 @@ def uptime():
         return uptime_int
 
 def render_conf(conf):
-    return "Tracker startup. Config:\n{0}\n".format(conf)
+    return "\n\nTracker startup. Config:\n{0}\n".format(conf)
