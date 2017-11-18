@@ -20,6 +20,13 @@ BUS = None # FIXME I don't think this is needed here, it's a global from within 
 operational_packet_template = "{callsign},{seq},{time},{lat},{lon},{alt},{num_sats},{num_gps_reads},{temperature},{pressure},{humidity}"
 no_fix_packet_template = "{callsign},{seq},NOFIX,{time},{num_sats},{num_gps_reads},{temperature},{pressure},{humidity},{uptime}"
 # TODO: should I send \r\n or can we just all be unix friends from now on?
+# FIXME: BUG! need to left zero pad the checksum here
+# ex: $$RADIOFLYER,20,04:43:23,41.899755,-84.047956,236,9,4,18.91,977.68,42.29*73D
+# should be
+#     $$RADIOFLYER,20,04:43:23,41.899755,-84.047956,236,9,4,18.91,977.68,42.29*073D
+# try: http://habitat.habhub.org/genpayload/
+#      payload -> create new
+#      new format wizard
 sentence_template = "$${0}*{1:X}\n"
 
 
