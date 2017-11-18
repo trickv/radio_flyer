@@ -34,11 +34,11 @@ class Camera():
     def take_photo(self, packet_data):
         if not self.camera_ready:
             print("Camera not ready.")
-            return
+            return False
         output_file = "{0}/{1}-{2}.jpg".format(self.output_directory, packet_data['seq'], packet_data['time'])
         if os.path.exists(output_file):
             print("output file %s exists, skipping" % output_file)
-            return
+            return False
         try:
             camera = picamera.PiCamera()
             camera.resolution = (3280, 2464) # max resolution for v2 sensor
@@ -66,3 +66,5 @@ class Camera():
                 self.camera_ready = False
             print("Camera error, count {1}: {0}".format(exception, self.fail_counter))
             pass
+            return False
+        return True
