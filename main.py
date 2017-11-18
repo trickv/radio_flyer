@@ -24,6 +24,8 @@ no_fix_packet_template = "{callsign},{seq},NOFIX,{time},{num_sats},{num_gps_read
 # ex: $$RADIOFLYER,20,04:43:23,41.899755,-84.047956,236,9,4,18.91,977.68,42.29*73D
 # should be
 #     $$RADIOFLYER,20,04:43:23,41.899755,-84.047956,236,9,4,18.91,977.68,42.29*073D
+# also bad:
+#     $$RADIOFLYER,69,17:19:21,41.899707,-84.048145,239,6,2,24.46,964.91,36.65*27A
 # try: http://habitat.habhub.org/genpayload/
 #      payload -> create new
 #      new format wizard
