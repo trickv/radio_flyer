@@ -12,7 +12,6 @@ import py_ublox_i2c.read
 import py_ublox_i2c.configure_serial
 import utils
 import transmitter as transmitter_class
-import camera as camera_class
 from conf import conf
 
 BUS = None # FIXME I don't think this is needed here, it's a global from within the ublox lib
@@ -42,7 +41,6 @@ def main():
     sequence = 0
     had_initial_fix = False
     configure_ublox()
-    camera = camera_class.Camera()
     transmitter = transmitter_class.Transmitter()
     rendered_conf = utils.render_conf(conf)
     print(rendered_conf)
@@ -122,12 +120,6 @@ def main():
         if not had_initial_fix:
             transmitter.send("%s: do not launch yet\n" % conf['callsign'])
         transmitter.send(sentence)
-        transmitter.send("CAM: start\n")
-        if camera.take_photo(packet_params):
-            transmitter.send("CAM: OK\n")
-        else:
-            transmitter.send("CAM: Fail\n")
-        transmitter.send("CAM: stop\n")
         num_gps_reads = 0
         sequence += 1
 
