@@ -7,7 +7,7 @@ class Transmitter():
     enable_gpio_pin = 23
 
     # transmitter RTTY specs:
-    rtty_baud = 300
+    rtty_baud = 50
     rtty_bits = serial.EIGHTBITS
     rtty_parity = serial.PARITY_NONE
     rtty_stopbits = serial.STOPBITS_TWO
