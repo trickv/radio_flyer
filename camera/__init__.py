@@ -59,4 +59,3 @@ class Camera():
             # It also must be run to free hardware locks for the next shot
             if camera:
                 camera.close()
-            print("Camera: finally camera.close()")
