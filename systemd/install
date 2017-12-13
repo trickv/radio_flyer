@@ -8,4 +8,9 @@ sudo cp -pv flyer_camera.service /etc/systemd/system/
 echo "Reloading systemd"
 sudo systemctl daemon-reload
 
+echo "Enabling systemd services"
+# It seems normal for these to output an error, however they do succeed:
+sudo systemctl enable radio_flyer
+sudo systemctl enable flyer_camera
+
 echo "You can now manually start the units radio_flyer.service and flyer_camera.service, or reboot."
