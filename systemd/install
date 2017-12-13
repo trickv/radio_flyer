@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+cd $(dirname $(realpath $0))
+
+sudo cp -pv radio_flyer.service /etc/systemd/system/
+sudo cp -pv flyer_camera.service /etc/systemd/system/
+
+echo "Reloading systemd"
+sudo systemctl daemon-reload
+
+echo "You can now manually start the units radio_flyer.service and flyer_camera.service, or reboot."
