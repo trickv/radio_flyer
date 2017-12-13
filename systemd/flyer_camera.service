@@ -1,5 +1,6 @@
 [Unit]
 Description=flyer_camera
+Documentation=https://github.com/trickv/radio_flyer/
 
 [Service]
 ExecStart=/home/pi/radio_flyer/main.py
