@@ -33,26 +33,30 @@ class Camera():
     def take_photo(self):
         if not self.camera_ready:
             print("Camera not ready.")
-            return False
+            return
         self.sequence += 1
         output_file = "{0}/{1}.jpg".format(self.output_directory, self.sequence)
+        print("Camera: taking picture to {}".format(output_file))
         if os.path.exists(output_file):
             print("output file %s exists, skipping" % output_file)
-            return False
+            return
+        camera = None
         try:
             camera = picamera.PiCamera()
             camera.resolution = (3280, 2464) # max resolution for v2 sensor
             camera.start_preview()
             time.sleep(self.delay)
             camera.capture(output_file)
-            camera.close() # This turns the camera off, saving power between shots
+            self.fail_counter = 0
         except Exception as exception:
             self.fail_counter += 1
             if self.fail_counter > 10:
                 self.camera_ready = False
             print("Camera error, count {1}: {0}".format(exception, self.fail_counter))
-            pass
-            return False
+            time.sleep(10) # cool off time after exception for hardware / other process to exit
         finally:
-            camera.close()
-        return output_file
+            # This turns the camera off, saving power between shots
+            # It also must be run to free hardware locks for the next shot
+            if camera:
+                camera.close()
+            print("Camera: finally camera.close()")
