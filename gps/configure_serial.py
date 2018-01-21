@@ -7,7 +7,7 @@ import serial
 # flight mode has actually been enabled?
 
 def _open_serial():
-    return serial.Serial('/dev/ttyAMA0', 9600, timeout=1)
+    return serial.Serial('/dev/ttyUSB0', 9600, timeout=1)
 
 def configure_for_flight():
     gps_serial = _open_serial()
