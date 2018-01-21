@@ -6,3 +6,4 @@ pynmea2
 crcmod
 picamera
 bme280
+pyelectronics
