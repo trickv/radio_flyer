@@ -5,6 +5,7 @@ import picamera
 
 class Camera():
     delay = 2
+    free_space_threshold = 500 * 1024 * 1024 # 500MiB
 
     output_directory = None
     camera_ready = False
@@ -33,6 +34,11 @@ class Camera():
     def take_photo(self):
         if not self.camera_ready:
             print("Camera not ready.")
+            return
+        filesystem_status = os.statvfs(self.output_directory)
+        free_space_bytes = filesystem_status.f_bavail * filesystem_status.f_bsize
+        if free_space_bytes < self.free_space_threshold:
+            print("Low on disk space: {}".format(free_space_bytes))
             return
         self.sequence += 1
         output_file = "{0}/{1}.jpg".format(self.output_directory, self.sequence)
