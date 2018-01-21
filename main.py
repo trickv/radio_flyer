@@ -26,9 +26,9 @@ sentence_template = "$${0}*{1:04X}\n"
 
 
 def configure_ublox():
-    utils.enable_relay_uart_to_gps()
+    #utils.enable_relay_uart_to_gps()
     py_ublox_i2c.configure_serial.configure_for_flight()
-    utils.disable_relay_uart_to_gps()
+    #utils.disable_relay_uart_to_gps()
 
 
 def setup_bme280():
@@ -101,12 +101,12 @@ def main():
                 })
         else:
             # Oh shit, the GPS is sending things I don't know how to handle
-            crazy = "%s: Unexpected GPS data: %s\n" % (callsign, gps_location)
+            crazy = "%s: Unexpected GPS data: %s\n" % (conf['callsign'], gps_location)
             transmitter.send(crazy)
             if gps_location.sentence_type in ("GLL", "GSA", "RMC", "GSV", "VTG"):
                 # either the initial config of the ublox didn't work, or it's been reset/rebooted.
                 # closing the uart should block until it's done spooling data.
-                transmitter.send("%s: Re-configuring ublox in 10 seconds.\n" % callsign)
+                transmitter.send("%s: Re-configuring ublox in 10 seconds.\n" % conf['callsign'])
                 time.sleep(10)
                 transmitter.close_uart()
                 print("UART closed, go go go")
