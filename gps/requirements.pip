@@ -1,0 +1,4 @@
+smbus-cffi
+pyserial
+pylint
+pynmea2
