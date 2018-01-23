@@ -7,6 +7,7 @@ import subprocess
 import pynmea2
 import crcmod
 from bme280 import bme280, bme280_i2c
+from lm75 import Lm75 as lm75_class
 
 import py_ublox_i2c.read
 import py_ublox_i2c.configure_serial
@@ -16,8 +17,8 @@ from conf import conf
 
 BUS = None # FIXME I don't think this is needed here, it's a global from within the ublox lib
 
-operational_packet_template = "{callsign},{seq},{time},{lat},{lon},{alt},{num_sats},{num_gps_reads},{temperature},{pressure},{humidity}"
-no_fix_packet_template = "{callsign},{seq},NOFIX,{time},{num_sats},{num_gps_reads},{temperature},{pressure},{humidity},{uptime}"
+operational_packet_template = "{callsign},{seq},{time},{lat},{lon},{alt},{num_sats},{num_gps_reads},{temperature},{pressure},{humidity},{internal_temperature}"
+no_fix_packet_template = "{callsign},{seq},NOFIX,{time},{num_sats},{num_gps_reads},{temperature},{pressure},{humidity},{uptime},{internal_temperature}"
 # TODO: should I send \r\n or can we just all be unix friends from now on?
 # try: http://habitat.habhub.org/genpayload/
 #      payload -> create new
@@ -53,6 +54,7 @@ def main():
     transmitter.send("Thanks to my lovely wife Sarah.\n\n")
     py_ublox_i2c.read.connect_bus()
     setup_bme280()
+    lm75_sensor = lm75_class()
     crc16f = crcmod.predefined.mkCrcFun('crc-ccitt-false')
 
     num_gps_reads = 0
@@ -83,6 +85,7 @@ def main():
             'temperature': round(bme280_data.temperature, 2),
             'humidity': round(bme280_data.humidity, 2),
             'pressure': round(bme280_data.pressure, 2),
+            'internal_temperature': lm75_sensor.get_temperature(),
         }
         if gps_location.sentence_type == 'GGA':
             timestamp = gps_location.timestamp.isoformat() if gps_location.timestamp else "00:00:00"
