@@ -9,8 +9,8 @@ import crcmod
 from bme280 import bme280, bme280_i2c
 from lm75 import Lm75 as lm75_class
 
-import py_ublox_i2c.read
-import py_ublox_i2c.configure_serial
+import gps.read
+import gps.configure_serial
 import utils
 import transmitter as transmitter_class
 from conf import conf
@@ -28,7 +28,7 @@ sentence_template = "$${0}*{1:04X}\n"
 
 def configure_ublox():
     #utils.enable_relay_uart_to_gps()
-    py_ublox_i2c.configure_serial.configure_for_flight()
+    gps.configure_serial.configure_for_flight()
     #utils.disable_relay_uart_to_gps()
 
 
@@ -52,7 +52,7 @@ def main():
     transmitter.send(rendered_conf)
     transmitter.send("Worlds best tracker software. Buy bitcoin!\n\n")
     transmitter.send("Thanks to my lovely wife Sarah.\n\n")
-    py_ublox_i2c.read.connect_bus()
+    gps.read.connect_bus()
     setup_bme280()
     lm75_sensor = lm75_class()
     crc16f = crcmod.predefined.mkCrcFun('crc-ccitt-false')
@@ -62,8 +62,8 @@ def main():
         gps_location = None
         try:
             num_gps_reads += 1
-            gps_location = py_ublox_i2c.read.read_gps(conf['ublox_i2c_address'])
-        except py_ublox_i2c.read.BadDataException:
+            gps_location = gps.read.read_gps(conf['ublox_i2c_address'])
+        except gps.read.BadDataException:
             utils.print_status_char("!")
             time.sleep(0.5)
             continue
