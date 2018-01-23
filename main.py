@@ -40,8 +40,12 @@ def setup_bme280():
 def main():
     sequence = 0
     had_initial_fix = False
-    configure_ublox()
     transmitter = transmitter_class.Transmitter()
+    try:
+        configure_ublox()
+    except Exception as e:
+        transmitter.send("Exception when opening GPS serial: {}\n\n".format(e))
+        raise
     rendered_conf = utils.render_conf(conf)
     print(rendered_conf)
     transmitter.send(rendered_conf)
