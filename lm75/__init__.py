@@ -12,7 +12,7 @@ class Lm75():
 
     def get_temperature(self):
         # Read I2C data and calculate temperature
-        raw = bus.read_word_data(self.address, 0) & 0xFFFF
+        raw = self.bus.read_word_data(self.address, 0) & 0xFFFF
         raw = ((raw << 8) & 0xFF00) + (raw >> 8)
         temperature = (raw / 32.0) / 8.0
         return temperature
