@@ -6,7 +6,7 @@ python:
   - "3.6"
 
 install:
-  - pip install -r requirements.pip
+  - cat requirements.pip | grep -v ^picamera$ | pip install -r /dev/stdin
 
 script:
   - pylint --disable superfluous-parens --disable missing-docstring *.py */*.py
