@@ -17,8 +17,12 @@ from conf import CONF as conf
 
 BUS = None # FIXME I don't think this is needed here, it's a global from within the ublox lib
 
-operational_packet_template = "{callsign},{seq},{time},{lat},{lon},{alt},{num_sats},{num_gps_reads},{temperature},{pressure},{humidity},{internal_temperature}"
-no_fix_packet_template = "{callsign},{seq},NOFIX,{time},{num_sats},{num_gps_reads},{temperature},{pressure},{humidity},{uptime},{internal_temperature}"
+operational_packet_template = "{callsign},{seq},{time},{lat},{lon},{alt}," +
+    "{num_sats},{num_gps_reads},{temperature},{pressure},{humidity}," +
+    "{internal_temperature}"
+no_fix_packet_template = "{callsign},{seq},NOFIX,{time},{num_sats}," +
+    "{num_gps_reads},{temperature},{pressure},{humidity},{uptime}," +
+    "{internal_temperature}"
 # TODO: should I send \r\n or can we just all be unix friends from now on?
 # try: http://habitat.habhub.org/genpayload/
 #      payload -> create new
