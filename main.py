@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 
 import time
-import os
-import subprocess
 
 import pynmea2
 import crcmod
