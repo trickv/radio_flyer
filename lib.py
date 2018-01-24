@@ -122,3 +122,61 @@ class Transmitter():
     def send(self, string):
         print("TX: {0}".format(string), end="")
         self.uart.write(string.encode('ascii'))
+
+class Gps():
+    def __init__(self):
+        self.port = serial.Serial('/dev/ttyUSB0', 9600, timeout=1)
+
+    # FIXME: Enable flight mode
+    # TODO: is it possible to read the configuration to verify
+    # flight mode has actually been enabled?
+
+    def configure_for_flight(self):
+        time.sleep(1)
+        self.port.write(("\r\n" * 5).encode('ascii'))
+        time.sleep(1)
+        disable_excessive_reports(gps_serial)
+        time.sleep(1)
+        self.port.write(("\r\n" * 5).encode('ascii'))
+        time.sleep(1)
+        self.port.close()
+
+
+    def configure_to_defaults(self):
+        self.__set_excessive_reports(enable=True)
+
+
+    def enable_flight_mode(self):
+        # FIXME UNTESTED!
+        # following is from https://github.com/Chetic/Serenity/blob/master/Serenity.py#L10
+        mode_string = bytearray.fromhex("B5 62 06 24 24 00 FF FF 06 03 00 00 00 00 10 27 00 00 05 00 FA 00 FA 00 64 00 2C 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 16 DC")
+        for character in mode_string:
+            self.port.write(chr(character))
+        self.port.write("\r\n")
+
+
+    def disable_excessive_reports():
+        self.__set_excessive_reports(enable=False)
+
+
+    def __set_excessive_reports(enable=False):
+        disable_template = "PUBX,40,%s,%d,0,0,0"
+        messages_disable = [
+            "GLL",
+            "GSA",
+            "RMC",
+            "GSV",
+            "VTG",
+        ]
+        for message in messages_disable:
+            disable_command = disable_template % (message, 1 if enable else 0)
+            checksum_int = 0
+            for character in disable_command:
+                checksum_int ^= ord(character)
+            disable_command = "$%s*%x\r\n" % (disable_command, checksum_int)
+            self.port.write(disable_command.encode('ascii'))
+
+    def read(self):
+        output = self.port.readline()
+        print("GPS: {}\n".format(output))
+        return pynmea2.parse(output, check=True)
