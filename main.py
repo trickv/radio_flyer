@@ -30,9 +30,7 @@ sentence_template = "$${0}*{1:04X}\n"
 
 
 def configure_ublox():
-    #utils.enable_relay_uart_to_gps()
     gps.configure_serial.configure_for_flight()
-    #utils.disable_relay_uart_to_gps()
 
 
 def setup_bme280():
