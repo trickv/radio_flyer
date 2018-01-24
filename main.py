@@ -13,7 +13,7 @@ import gps.read
 import gps.configure_serial
 import utils
 import transmitter as transmitter_class
-from conf import conf
+from conf import CONF as conf
 
 BUS = None # FIXME I don't think this is needed here, it's a global from within the ublox lib
 
