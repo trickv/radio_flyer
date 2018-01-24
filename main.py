@@ -17,12 +17,14 @@ from conf import CONF as conf
 
 BUS = None # FIXME I don't think this is needed here, it's a global from within the ublox lib
 
-operational_packet_template = "{callsign},{seq},{time},{lat},{lon},{alt}," +
-    "{num_sats},{num_gps_reads},{temperature},{pressure},{humidity}," +
-    "{internal_temperature}"
-no_fix_packet_template = "{callsign},{seq},NOFIX,{time},{num_sats}," +
-    "{num_gps_reads},{temperature},{pressure},{humidity},{uptime}," +
-    "{internal_temperature}"
+PACKET_TEMPLATES = {
+    'operational': "{callsign},{seq},{time},{lat},{lon},{alt}," +
+        "{num_sats},{num_gps_reads},{temperature},{pressure},{humidity}," +
+        "{internal_temperature}",
+    'no_fix': "{callsign},{seq},NOFIX,{time},{num_sats}," +
+        "{num_gps_reads},{temperature},{pressure},{humidity},{uptime}," +
+        "{internal_temperature}",
+}
 # TODO: should I send \r\n or can we just all be unix friends from now on?
 # try: http://habitat.habhub.org/genpayload/
 #      payload -> create new
@@ -98,13 +100,13 @@ def main():
                 'time': timestamp,
             })
             if gps_location.gps_qual == 0: # we have no GPS fix
-                packet_template = no_fix_packet_template
+                packet_template = PACKET_TEMPLATES['no_fix']
                 packet_params.update({
                     'uptime': utils.uptime()
                 })
             else:
                 had_initial_fix = True
-                packet_template = operational_packet_template
+                packet_template = PACKET_TEMPLATES['operational']
                 packet_params.update({
                     'alt': int(round(gps_location.altitude, 0)),
                     'lat': round(gps_location.latitude, conf['coordinate_precision']), # FIXME: what does dl-fldigi require? see serenity code.
