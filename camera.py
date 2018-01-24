@@ -2,12 +2,12 @@
 
 import time
 
-import camera as camera_class
+import lib
 
 
 def main():
     print("Camera capture startup")
-    camera = camera_class.Camera()
+    camera = lib.Camera()
     while True:
         camera.take_photo()
         time.sleep(8)

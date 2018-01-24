@@ -1,7 +1,11 @@
 import time
 import os
+import smbus
+import serial
 
 import picamera
+import wiringpi
+
 
 class Camera():
     delay = 2
@@ -65,3 +69,56 @@ class Camera():
             # It also must be run to free hardware locks for the next shot
             if camera:
                 camera.close()
+
+
+class Lm75():
+
+    """
+    By default the address of LM75 sensors are set to 0x48
+    aka A0, A1, and A2 are set to GND (0v).
+    """
+    def __init__(self, address=0x48, bus_id = 1):
+        self.address = address
+        self.bus = smbus.SMBus(bus_id)
+
+    def get_temperature(self):
+        # Read I2C data and calculate temperature
+        raw = self.bus.read_word_data(self.address, 0) & 0xFFFF
+        raw = ((raw << 8) & 0xFF00) + (raw >> 8)
+        temperature = (raw / 32.0) / 8.0
+        return temperature
+
+
+class Transmitter():
+    uart = None
+    enable_gpio_pin = 23
+
+    # transmitter RTTY specs:
+    rtty_baud = 50
+    rtty_bits = serial.EIGHTBITS
+    rtty_parity = serial.PARITY_NONE
+    rtty_stopbits = serial.STOPBITS_TWO
+
+    def __init__(self):
+        self.open_uart()
+        self.enable_tx()
+
+    def enable_tx(self):
+        wiringpi.wiringPiSetupGpio()
+        wiringpi.pinMode(self.enable_gpio_pin, 1)
+        wiringpi.digitalWrite(self.enable_gpio_pin, 1)
+
+    def open_uart(self):
+        if self.uart:
+            raise Exception("UART previously opened?")
+        self.uart = serial.Serial('/dev/ttyAMA0',
+                                  self.rtty_baud, self.rtty_bits,
+                                  self.rtty_parity, self.rtty_stopbits)
+
+    def close_uart(self):
+        self.uart.close()
+        self.uart = None
+
+    def send(self, string):
+        print("TX: {0}".format(string), end="")
+        self.uart.write(string.encode('ascii'))

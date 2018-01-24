@@ -5,12 +5,11 @@ import time
 import pynmea2
 import crcmod
 from bme280 import bme280, bme280_i2c
-from lm75 import Lm75 as lm75_class
+import lib
 
 import gps.read
 import gps.configure_serial
 import utils
-import transmitter as transmitter_class
 from conf import CONF as conf
 
 BUS = None # FIXME I don't think this is needed here, it's a global from within the ublox lib
@@ -45,7 +44,7 @@ def setup_bme280():
 def main():
     sequence = 0
     had_initial_fix = False
-    transmitter = transmitter_class.Transmitter()
+    transmitter = lib.Transmitter()
     try:
         configure_ublox()
     except Exception as e:
@@ -58,7 +57,7 @@ def main():
     transmitter.send("Thanks to my lovely wife Sarah.\n\n")
     gps.read.connect_bus()
     setup_bme280()
-    lm75_sensor = lm75_class()
+    lm75_sensor = lib.Lm75()
     crc16f = crcmod.predefined.mkCrcFun('crc-ccitt-false')
 
     num_gps_reads = 0
