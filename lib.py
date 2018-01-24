@@ -1,10 +1,11 @@
 import time
 import os
 import smbus
-import serial
 
+import serial
 import picamera
 import wiringpi
+import pynmea2
 
 
 class Camera():
@@ -179,4 +180,4 @@ class Gps():
     def read(self):
         output = self.port.readline()
         print("GPS: {}\n".format(output))
-        return pynmea2.parse(output, check=True)
+        return pynmea2.parse(output.decode('ascii'), check=True)
