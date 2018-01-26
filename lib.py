@@ -141,10 +141,8 @@ class Gps():
     def __init__(self):
         self.port = serial.Serial('/dev/ttyUSB0', 9600, timeout=0.1) # FIXME low timeout for debugging
         self.packet_queue = queue.Queue(maxsize=self.maximum_packet_queue_size)
-        self.read_thread = threading.Thread(target=self.__read_thread)
+        self.read_thread = threading.Thread(target=self.__read_thread, daemon=True)
         self.read_thread.start()
-        # FIXME: how do I have this thread die when the parent thread dies? e.g. Ctrl+C or exception?
-        # MUST FIX as a main thread crash will leave the GPS thread running, and systemd can't restart for a while.
 
     # FIXME: Enable flight mode
     # TODO: is it possible to read the configuration to verify
