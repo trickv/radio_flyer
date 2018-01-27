@@ -139,7 +139,7 @@ class Gps():
     maximum_packet_queue_size = 1000
 
     def __init__(self):
-        self.port = serial.Serial('/dev/ttyUSB0', 9600, timeout=0.1) # FIXME low timeout for debugging
+        self.port = serial.Serial('/dev/ttyUSBGPS', 9600, timeout=0.1) # FIXME low timeout for debugging
         self.packet_queue = queue.Queue(maxsize=self.maximum_packet_queue_size)
         self.read_thread = threading.Thread(target=self.__read_thread, daemon=True)
         self.read_thread.start()
