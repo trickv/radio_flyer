@@ -195,7 +195,10 @@ class Gps():
 
 
     def read(self):
-        print("Queue length: {}".format(self.packet_queue.qsize()))
+        queue_size = self.packet_queue.qsize()
+        print("Queue length: {}".format(queue_size))
+        if queue_size == 0 and not self.read_thread.is_alive():
+            raise Exception("queue is empty and read thread is dead. bailing out.")
         while True:
             try:
                 self.latest_sentence = self.packet_queue.get(block=False)
