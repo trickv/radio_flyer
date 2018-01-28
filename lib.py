@@ -186,7 +186,7 @@ class Gps():
 
 
     def __set_excessive_reports(self, enable=False):
-        disable_template = "PUBX,40,%s,%d,0,0,0"
+        disable_template = "PUBX,40,%s,0,%d,0,0"
         messages_disable = [
             "GLL",
             "GSA",
