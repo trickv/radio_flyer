@@ -3,6 +3,7 @@ import os
 import smbus
 import threading
 import queue
+import datetime
 
 import serial
 import picamera
@@ -129,34 +130,32 @@ class Transmitter():
 class Gps():
     latest_sentence = None
     port = None
-    packet_queue = None
+    read_queue = None
+    write_queue = None
     read_thread = None
 
     # The following is a bit arbitrary...
     # On the seemingly impossible occasion where the main thread hasn't read in a while,
     # the queue will grow. This will cause the queue to fill up after 1000 seconds of data
     # from the GPS and throw, rather than sit there silent forever.
-    maximum_packet_queue_size = 1000
+    maximum_read_queue_size = 1000
 
     def __init__(self):
         self.port = serial.Serial('/dev/ttyUSBGPS', 9600, timeout=0.1) # FIXME low timeout for debugging
-        self.packet_queue = queue.Queue(maxsize=self.maximum_packet_queue_size)
-        self.read_thread = threading.Thread(target=self.__read_thread, daemon=True)
+        self.read_queue = queue.Queue(maxsize=self.maximum_read_queue_size)
+        self.write_queue = queue.Queue()
+        self.read_thread = threading.Thread(target=self.__io_thread, daemon=True)
         self.read_thread.start()
+        time.sleep(2)
+        self.configure_for_flight()
 
     # FIXME: Enable flight mode
     # TODO: is it possible to read the configuration to verify
     # flight mode has actually been enabled?
 
     def configure_for_flight(self):
-        time.sleep(1)
-        self.port.write(("\r\n" * 5).encode('ascii'))
-        time.sleep(1)
         self.disable_excessive_reports()
-        time.sleep(1)
-        self.port.write(("\r\n" * 5).encode('ascii'))
-        time.sleep(1)
-        self.port.close()
+        self.enable_flight_mode()
 
 
     def configure_to_defaults(self):
@@ -167,9 +166,19 @@ class Gps():
         # FIXME UNTESTED!
         # following is from https://github.com/Chetic/Serenity/blob/master/Serenity.py#L10
         mode_string = bytearray.fromhex("B5 62 06 24 24 00 FF FF 06 03 00 00 00 00 10 27 00 00 05 00 FA 00 FA 00 64 00 2C 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 16 DC")
+        to_write = ""
         for character in mode_string:
-            self.port.write(chr(character))
-        self.port.write("\r\n")
+            to_write += chr(character)
+        to_write += "\r\n"
+        self.write_queue.put(to_write)
+        time.sleep(2)
+
+        to_write = ""
+        fucking_string = bytearray.fromhex("B5 62 06 01 08 00 F0 01 00 00 00 00 00 01 01 2B")
+        for character in fucking_string:
+            to_write += chr(character)
+        to_write += "\r\n"
+        self.write_queue.put(to_write)
 
 
     def disable_excessive_reports(self):
@@ -191,34 +200,38 @@ class Gps():
             for character in disable_command:
                 checksum_int ^= ord(character)
             disable_command = "$%s*%x\r\n" % (disable_command, checksum_int)
-            self.port.write(disable_command.encode('ascii'))
+            self.write_queue.put(disable_command)
 
 
     def read(self):
-        queue_size = self.packet_queue.qsize()
+        queue_size = self.read_queue.qsize()
         print("Queue length: {}".format(queue_size))
         if queue_size == 0 and not self.read_thread.is_alive():
             raise Exception("queue is empty and read thread is dead. bailing out.")
         while True:
             try:
-                self.latest_sentence = self.packet_queue.get(block=False)
+                self.latest_sentence = self.read_queue.get(block=False)
             except queue.Empty:
                 break
         return self.latest_sentence
 
 
-    def __read_thread(self):
+    def __io_thread(self):
         """
-        Singleton thread which will run indefinitely, reading the
-        gps for sentences and putting the messages on a queue.
+        Singleton thread which will run indefinitely, reading and
+        writing between the gps serial and {read,write}_queue.
 
         Do not invoke directly, this method never returns.
         """
         while True:
             print(".", end='', flush=True)
+            while self.write_queue.qsize() > 0:
+                to_write = self.write_queue.get()
+                print("GPS: write: {}".format(to_write.encode('utf-8')))
+                self.port.write(to_write.encode('utf-8'))
             sentence = self.__read()
             if sentence:
-                self.packet_queue.put(sentence)
+                self.read_queue.put(sentence)
             else:
                 time.sleep(0.1)
 
