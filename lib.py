@@ -199,7 +199,7 @@ class Gps():
             checksum_int = 0
             for character in disable_command:
                 checksum_int ^= ord(character)
-            disable_command = "$%s*%x\r\n" % (disable_command, checksum_int)
+            disable_command = "${0}*{1:02X}\r\n".format(disable_command, checksum_int)
             self.write_queue.put(disable_command)
 
 
