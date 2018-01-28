@@ -152,7 +152,7 @@ class Gps():
         time.sleep(1)
         self.port.write(("\r\n" * 5).encode('ascii'))
         time.sleep(1)
-        disable_excessive_reports(gps_serial)
+        self.disable_excessive_reports()
         time.sleep(1)
         self.port.write(("\r\n" * 5).encode('ascii'))
         time.sleep(1)
@@ -172,11 +172,11 @@ class Gps():
         self.port.write("\r\n")
 
 
-    def disable_excessive_reports():
+    def disable_excessive_reports(self):
         self.__set_excessive_reports(enable=False)
 
 
-    def __set_excessive_reports(enable=False):
+    def __set_excessive_reports(self, enable=False):
         disable_template = "PUBX,40,%s,%d,0,0,0"
         messages_disable = [
             "GLL",
