@@ -203,6 +203,15 @@ class Gps():
             self.write_queue.put(disable_command)
 
 
+    def __hires_gngga(self):
+        message = "PUBX,40,GGA,0,0.25,0,0"
+        checksum_int = 0
+        for character in message:
+            checksum_int ^= ord(character)
+        message = "${0}*{1:02X}\r\n".format(message, checksum_int)
+        self.write_queue.put(message)
+
+
     def read(self):
         queue_size = self.read_queue.qsize()
         print("Queue length: {}".format(queue_size))
