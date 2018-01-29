@@ -186,7 +186,9 @@ class Gps():
 
 
     def __set_excessive_reports(self, enable=False):
-        disable_template = "PUBX,40,%s,0,%d,0,0"
+        # the four numeric fields after the NMEA type (0,0,0,0) are for different outputs:
+        # DCC (aka I2C), Serial, and two others.
+        disable_template = "PUBX,40,{0},{1},{1},0,0"
         messages_disable = [
             "GLL",
             "GSA",
@@ -195,7 +197,7 @@ class Gps():
             "VTG",
         ]
         for message in messages_disable:
-            disable_command = disable_template % (message, 1 if enable else 0)
+            disable_command = disable_template.format(message, 1 if enable else 0)
             checksum_int = 0
             for character in disable_command:
                 checksum_int ^= ord(character)
