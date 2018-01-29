@@ -133,6 +133,7 @@ class Gps():
     read_queue = None
     write_queue = None
     read_thread = None
+    ubx_read_queue = None
 
     # The following is a bit arbitrary...
     # On the seemingly impossible occasion where the main thread hasn't read in a while,
@@ -140,86 +141,121 @@ class Gps():
     # from the GPS and throw, rather than sit there silent forever.
     maximum_read_queue_size = 1000
 
+    default_timeout = 0.1 # FIXME low timeout for debugging
+
     def __init__(self):
-        self.port = serial.Serial('/dev/ttyUSBGPS', 9600, timeout=0.1) # FIXME low timeout for debugging
+        self.port = serial.Serial('/dev/ttyUSBGPS', 9600, timeout=self.default_timeout)
         self.read_queue = queue.Queue(maxsize=self.maximum_read_queue_size)
         self.write_queue = queue.Queue()
+        self.ubx_read_queue = queue.Queue()
         self.read_thread = threading.Thread(target=self.__io_thread, daemon=True)
         self.read_thread.start()
         time.sleep(2)
         self.configure_for_flight()
 
-    # FIXME: Enable flight mode
-    # TODO: is it possible to read the configuration to verify
-    # flight mode has actually been enabled?
 
     def configure_for_flight(self):
-        self.disable_excessive_reports()
+        """
+        hacking space, these are mostly for testing. for flight I'll remove this
+        function and put necessary calls in __init__()
+        """
+        self.configure_to_defaults()
+        time.sleep(3)
+        self.configure_output_messages()
+        time.sleep(3)
         self.enable_flight_mode()
+        time.sleep(5)
+        self.reboot() # for funsies, FIXME, remove this before flight of course!
+        pass
 
 
     def configure_to_defaults(self):
         self.__set_excessive_reports(enable=True)
 
 
+    def configure_output_messages(self):
+        ubx_cfg_class = 0x06
+        ubx_cfg_msg = 0x01
+        for index in range(1, 6):
+            payload = bytearray.fromhex("F0") + index.to_bytes(1, byteorder='little') + bytearray.fromhex("00 00 00 00 00 01")
+            return_code = self.__send_and_confirm_ubx_packet(ubx_cfg_class, ubx_cfg_msg, payload)
+            if not return_code:
+                raise Exception("Failed to configure output message id {}".format(index))
+
+
     def enable_flight_mode(self):
-        # FIXME UNTESTED!
-        # following is from https://github.com/Chetic/Serenity/blob/master/Serenity.py#L10
-        mode_string = bytearray.fromhex("B5 62 06 24 24 00 FF FF 06 03 00 00 00 00 10 27 00 00 05 00 FA 00 FA 00 64 00 2C 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 16 DC")
-        to_write = ""
-        for character in mode_string:
-            to_write += chr(character)
-        to_write += "\r\n"
-        self.write_queue.put(to_write)
-        time.sleep(2)
-
-    def experimental_gll_disable(self):
-        to_write = ""
-        fucking_string = bytearray.fromhex("B5 62 06 01 08 00 F0 01 00 00 00 00 00 01 01 2B")
-        fucking_string.append(ord("\r"))
-        fucking_string.append(ord("\n"))
-        self.write_queue.put(fucking_string)
+        # the following is from https://github.com/Chetic/Serenity/blob/master/Serenity.py#L10
+        # bytearray.fromhex("B5 62 06 24 24 00 FF FF 06 03 00 00 00 00 10 27 00 00 05 00 FA 00 FA 00 64 00 2C 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 16 DC")
+        cfg_nav5_class_id = 0x06
+        cfg_nav5_message_id = 0x24
+        payload = bytearray.fromhex("FF FF 06 03 00 00 00 00 10 27 00 00 05 00 FA 00 FA 00 64 00 2C 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00")
+        return self.__send_and_confirm_ubx_packet(cfg_nav5_class_id, cfg_nav5_message_id, payload)
 
 
-    def disable_excessive_reports(self):
-        self.__set_excessive_reports(enable=False)
+    def reboot(self):
+        """
+        This method REBOOTS THE GPS. Useful for testing/debugging.
+        Not useful at 30000 meters!
+        """
+        # https://gist.github.com/tomazas/3ab51f91cdc418f5704d says to send:
+        # send 0x06, 0x04, 0x04, 0x00, 0xFF, 0x87, 0x00, 0x00
+        return self.__send_and_confirm_ubx_packet(0x06, 0x04, bytearray.fromhex("FF 87 00 00"))
 
+    def __send_and_confirm_ubx_packet(self, class_id, message_id, payload):
+        ubx_packet_header = bytearray.fromhex("B5 62") # constant
+        length_field_bytes = 2 # constant
 
-    def __set_excessive_reports(self, enable=False):
-        # the four numeric fields after the NMEA type (0,0,0,0) are for different outputs:
-        # DCC (aka I2C), Serial, and two others.
-        disable_template = "PUBX,40,{0},{1},{1},0,0"
-        messages_disable = [
-            "GLL",
-            "GSA",
-            "RMC",
-            "GSV",
-            "VTG",
-        ]
-        for message in messages_disable:
-            disable_command = disable_template.format(message, 1 if enable else 0)
-            checksum_int = 0
-            for character in disable_command:
-                checksum_int ^= ord(character)
-            disable_command = "${0}*{1:02X}\r\n".format(disable_command, checksum_int)
-            self.write_queue.put(disable_command)
+        if self.ubx_read_queue.qsize() > 0:
+            raise Exception("ubx_read_queue must be empty before calling this function")
 
+        prefix = bytearray((class_id, message_id))
+        length = len(payload).to_bytes(length_field_bytes, byteorder='little')
+        checksum = self.__ubx_checksum(prefix + length + payload)
+        packet = ubx_packet_header + prefix + length + payload + checksum
+        self.write_queue.put(packet)
+        print("UBX packet built: {}".format(packet))
 
-    def __hires_gngga(self):
-        message = "PUBX,40,GGA,0,0.25,0,0"
-        checksum_int = 0
-        for character in message:
-            checksum_int ^= ord(character)
-        message = "${0}*{1:02X}\r\n".format(message, checksum_int)
-        self.write_queue.put(message)
+        ack_prefix = bytearray.fromhex("05 01")
+        ack_length = int(2).to_bytes(length_field_bytes, byteorder='little')
+        ack_payload = prefix
+        ack_checksum = self.__ubx_checksum(ack_prefix + ack_length + ack_payload)
+        expected_ack = ubx_packet_header + ack_prefix + ack_length + ack_payload + ack_checksum
+        wait_length = 10 # seconds
+        wait_interval = 0.1 # seconds
+        interval_count = 0
+        while True:
+            if interval_count * wait_interval > wait_length:
+                print("UBX packet sent without ACK! This is bad.")
+                break
+            time.sleep(wait_interval) # excessively large to force me to fix race conditions FIXME
+            if self.ubx_read_queue.qsize() > 0:
+                ack = self.ubx_read_queue.get()
+                if ack == expected_ack:
+                    print("UBX packet ACKd: {}".format(ack))
+                elif ack[2:3] == bytearray.fromhex("05 01"):
+                    print("UBX-NAK packet! :(")
+                else:
+                    print("Unknown UBX reply: {}".format(ack))
+                    print("Looking for      : {}".format(expected_ack))
+                return True
+            interval_count += 1
+        return False
 
-    def __normal_gngga(self):
-        message = "PUBX,40,GGA,0,1,0,0"
-        checksum_int = 0
-        for character in message:
-            checksum_int ^= ord(character)
-        message = "${0}*{1:02X}\r\n".format(message, checksum_int)
-        self.write_queue.put(message)
+    def __ubx_checksum(self, prefix_and_payload):
+        """
+        Calculates a UBX binary packet checksum.
+        Algorithm comes from the u-blox M8 Receiver Description manual section "UBX Checksum"
+        This is an implementation of the 8-Bit Fletcher Algorithm,
+            so there may be a standard library for this.
+        """
+        checksum_a = 0
+        checksum_b = 0
+        for byte in prefix_and_payload:
+            checksum_a = checksum_a + byte
+            checksum_b = checksum_a + checksum_b
+        checksum_a %= 256
+        checksum_b %= 256
+        return bytearray((checksum_a, checksum_b))
 
 
     def read(self):
@@ -286,13 +322,26 @@ class Gps():
         """
 
         waiting = self.port.in_waiting
-        line = self.port.readline()
+        if waiting == 0:
+            return False
+        first_byte = self.port.read()
+        if first_byte == b'\xb5': # looks like a UBX proprietary packet
+            self.port.timeout = 10
+            remaining_header = self.port.read(3)
+            length_bytes = self.port.read(2)
+            length = int.from_bytes(length_bytes, byteorder='little')
+            remaining_packet = self.port.read(length + 2) # add 2 for checksum bytes
+            self.port.timeout = self.default_timeout
+            ubx_packet = first_byte + remaining_header + length_bytes + remaining_packet
+            self.ubx_read_queue.put(ubx_packet)
+            return
+        else:
+            line = self.port.readline()
+            line = first_byte + line
         try:
             ascii_line = line.decode('ascii')
         except UnicodeDecodeError as exception:
             print("GPS reply string decode error on: {}".format(line))
-            return False
-        if len(ascii_line) == 0:
             return False
         if ascii_line[0] != "$":
             print("non-dollar line")
