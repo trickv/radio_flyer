@@ -173,12 +173,12 @@ class Gps():
         self.write_queue.put(to_write)
         time.sleep(2)
 
+    def experimental_gll_disable(self):
         to_write = ""
         fucking_string = bytearray.fromhex("B5 62 06 01 08 00 F0 01 00 00 00 00 00 01 01 2B")
-        for character in fucking_string:
-            to_write += chr(character)
-        to_write += "\r\n"
-        self.write_queue.put(to_write)
+        fucking_string.append(ord("\r"))
+        fucking_string.append(ord("\n"))
+        self.write_queue.put(fucking_string)
 
 
     def disable_excessive_reports(self):
@@ -211,6 +211,14 @@ class Gps():
         message = "${0}*{1:02X}\r\n".format(message, checksum_int)
         self.write_queue.put(message)
 
+    def __normal_gngga(self):
+        message = "PUBX,40,GGA,0,1,0,0"
+        checksum_int = 0
+        for character in message:
+            checksum_int ^= ord(character)
+        message = "${0}*{1:02X}\r\n".format(message, checksum_int)
+        self.write_queue.put(message)
+
 
     def read(self):
         queue_size = self.read_queue.qsize()
@@ -236,8 +244,11 @@ class Gps():
             print(".", end='', flush=True)
             while self.write_queue.qsize() > 0:
                 to_write = self.write_queue.get()
-                print("GPS: write: {}".format(to_write.encode('utf-8')))
-                self.port.write(to_write.encode('utf-8'))
+                to_write_type = type(to_write)
+                if to_write_type == str:
+                    to_write = to_write.encode('utf-8')
+                print("GPS: write {}: {}".format(to_write_type, to_write))
+                self.port.write(to_write)
             sentence = self.__read()
             if sentence:
                 self.read_queue.put(sentence)
@@ -277,7 +288,7 @@ class Gps():
         try:
             ascii_line = line.decode('ascii')
         except UnicodeDecodeError as exception:
-            print("ASCII decode error")
+            print("GPS reply string decode error on: {}".format(line))
             return False
         if len(ascii_line) == 0:
             return False
