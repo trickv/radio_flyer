@@ -261,6 +261,8 @@ class Gps():
             raise Exception("queue is empty and read thread is dead. bailing out.")
         while True:
             try:
+                # FIXME: only read GGA packets here
+                # in case something else trickles through
                 self.latest_sentence = self.read_queue.get(block=False)
             except queue.Empty:
                 break
