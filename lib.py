@@ -159,18 +159,12 @@ class Gps():
         hacking space, these are mostly for testing. for flight I'll remove this
         function and put necessary calls in __init__()
         """
-        self.configure_to_defaults()
-        time.sleep(3)
         self.configure_output_messages()
         time.sleep(3)
         self.enable_flight_mode()
         time.sleep(5)
         self.reboot() # for funsies, FIXME, remove this before flight of course!
         pass
-
-
-    def configure_to_defaults(self):
-        self.__set_excessive_reports(enable=True)
 
 
     def configure_output_messages(self):
