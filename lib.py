@@ -164,6 +164,8 @@ class Gps():
         self.enable_flight_mode()
         time.sleep(5)
         self.reboot() # for funsies, FIXME, remove this before flight of course!
+        time.sleep(5)
+        self.configure_output_messages()
         pass
 
 
