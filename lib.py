@@ -174,7 +174,7 @@ class Gps():
 
     def configure_output_messages(self):
         """
-        Disables NMEA sentences: GLL, GSA, GSV, RMC, VTG (id 1 to 5)
+        Disables NMEA sentences with CFG-PRN: GLL, GSA, GSV, RMC, VTG (id 1 to 5)
         """
         ubx_cfg_class = 0x06
         ubx_cfg_msg = 0x01
@@ -186,6 +186,12 @@ class Gps():
 
 
     def enable_flight_mode(self):
+        """
+        Sends a CFG-NAV5 UBX message which enables "flight mode", which allows
+        operation at higher altitudes than defaults.
+        Should read up more on this sentence, I'm just copying this
+        byte string from other tracker projects.
+        """
         # the following is from https://github.com/Chetic/Serenity/blob/master/Serenity.py#L10
         # bytearray.fromhex("B5 62 06 24 24 00 FF FF 06 03 00 00 00 00 10 27 00 00 05 00 FA 00 FA 00 64 00 2C 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 16 DC")
         cfg_nav5_class_id = 0x06
