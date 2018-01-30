@@ -32,7 +32,7 @@ class Camera():
         directory = base_directory + str(max_index + 1)
         print("Camera: Output dir set to %s" % directory)
         try:
-            os.makedirs(directory, exist_ok = True) # Python >= 3.2 required for exist_ok flag
+            os.makedirs(directory, exist_ok=True) # Python >= 3.2 required for exist_ok flag
             self.camera_ready = True
         except OSError as exception:
             print("Error while creating camera output dir: %s" % exception)
@@ -80,7 +80,7 @@ class Lm75():
     By default the address of LM75 sensors are set to 0x48
     aka A0, A1, and A2 are set to GND (0v).
     """
-    def __init__(self, address=0x48, bus_id = 1):
+    def __init__(self, address=0x48, bus_id=1):
         self.address = address
         self.bus = smbus.SMBus(bus_id)
 
