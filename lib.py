@@ -168,7 +168,6 @@ class Gps():
         self.reboot() # for funsies, FIXME, remove this before flight of course!
         time.sleep(5)
         self.configure_output_messages()
-        pass
 
 
     def configure_output_messages(self):
@@ -178,7 +177,9 @@ class Gps():
         ubx_cfg_class = 0x06
         ubx_cfg_msg = 0x01
         for index in range(1, 6):
-            payload = bytearray.fromhex("F0") + index.to_bytes(1, byteorder='little') + bytearray.fromhex("00 00 00 00 00 01")
+            payload = bytearray.fromhex("F0")
+            payload += index.to_bytes(1, byteorder='little')
+            payload += bytearray.fromhex("00 00 00 00 00 01")
             return_code = self.__send_and_confirm_ubx_packet(ubx_cfg_class, ubx_cfg_msg, payload)
             if not return_code:
                 raise Exception("Failed to configure output message id {}".format(index))
@@ -190,12 +191,13 @@ class Gps():
         operation at higher altitudes than defaults.
         Should read up more on this sentence, I'm just copying this
         byte string from other tracker projects.
+        See for example string:
+            https://github.com/Chetic/Serenity/blob/master/Serenity.py#L10
+            https://github.com/PiInTheSky/pits/blob/master/tracker/gps.c#L423
         """
-        # the following is from https://github.com/Chetic/Serenity/blob/master/Serenity.py#L10
-        # bytearray.fromhex("B5 62 06 24 24 00 FF FF 06 03 00 00 00 00 10 27 00 00 05 00 FA 00 FA 00 64 00 2C 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 16 DC")
         cfg_nav5_class_id = 0x06
         cfg_nav5_message_id = 0x24
-        payload = bytearray.fromhex("FF FF 06 03 00 00 00 00 10 27 00 00 05 00 FA 00 FA 00 64 00 2C 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00")
+        payload = bytearray.fromhex("FF FF 06 03 00 00 00 00 10 27 00 00 05 00 FA 00 FA 00 64 00 2C 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00") # pylint: disable=line-too-long
         return self.__send_and_confirm_ubx_packet(cfg_nav5_class_id, cfg_nav5_message_id, payload)
 
 
