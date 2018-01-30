@@ -1,6 +1,9 @@
 import time
 import os
 import smbus
+import threading
+import queue
+import datetime
 
 import serial
 import wiringpi
@@ -125,59 +128,229 @@ class Transmitter():
         self.uart.write(string.encode('ascii'))
 
 class Gps():
-    def __init__(self):
-        self.port = serial.Serial('/dev/ttyUSB0', 9600, timeout=1)
+    latest_sentence = None
+    port = None
+    read_queue = None
+    write_queue = None
+    read_thread = None
+    ubx_read_queue = None
 
-    # FIXME: Enable flight mode
-    # TODO: is it possible to read the configuration to verify
-    # flight mode has actually been enabled?
+    # The following is a bit arbitrary...
+    # On the seemingly impossible occasion where the main thread hasn't read in a while,
+    # the queue will grow. This will cause the queue to fill up after 1000 seconds of data
+    # from the GPS and throw, rather than sit there silent forever.
+    maximum_read_queue_size = 1000
+
+    default_timeout = 0.1 # FIXME low timeout for debugging
+
+    def __init__(self):
+        """
+        Configure the GPS device and initialize queues, and start the I/O thread.
+        """
+        self.port = serial.Serial('/dev/ttyUSBGPS', 9600, timeout=self.default_timeout)
+        self.read_queue = queue.Queue(maxsize=self.maximum_read_queue_size)
+        self.write_queue = queue.Queue()
+        self.ubx_read_queue = queue.Queue()
+        self.read_thread = threading.Thread(target=self.__io_thread, daemon=True)
+        self.read_thread.start()
+        time.sleep(2)
+        self.configure_for_flight()
+
 
     def configure_for_flight(self):
-        time.sleep(1)
-        self.port.write(("\r\n" * 5).encode('ascii'))
-        time.sleep(1)
-        disable_excessive_reports(gps_serial)
-        time.sleep(1)
-        self.port.write(("\r\n" * 5).encode('ascii'))
-        time.sleep(1)
-        self.port.close()
+        """
+        hacking space, these are mostly for testing. for flight I'll remove this
+        function and put necessary calls in __init__()
+        """
+        self.configure_output_messages()
+        time.sleep(3)
+        self.enable_flight_mode()
+        time.sleep(5)
+        self.reboot() # for funsies, FIXME, remove this before flight of course!
+        time.sleep(5)
+        self.configure_output_messages()
+        pass
 
 
-    def configure_to_defaults(self):
-        self.__set_excessive_reports(enable=True)
+    def configure_output_messages(self):
+        """
+        Disables NMEA sentences with CFG-PRN: GLL, GSA, GSV, RMC, VTG (id 1 to 5)
+        """
+        ubx_cfg_class = 0x06
+        ubx_cfg_msg = 0x01
+        for index in range(1, 6):
+            payload = bytearray.fromhex("F0") + index.to_bytes(1, byteorder='little') + bytearray.fromhex("00 00 00 00 00 01")
+            return_code = self.__send_and_confirm_ubx_packet(ubx_cfg_class, ubx_cfg_msg, payload)
+            if not return_code:
+                raise Exception("Failed to configure output message id {}".format(index))
 
 
     def enable_flight_mode(self):
-        # FIXME UNTESTED!
-        # following is from https://github.com/Chetic/Serenity/blob/master/Serenity.py#L10
-        mode_string = bytearray.fromhex("B5 62 06 24 24 00 FF FF 06 03 00 00 00 00 10 27 00 00 05 00 FA 00 FA 00 64 00 2C 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 16 DC")
-        for character in mode_string:
-            self.port.write(chr(character))
-        self.port.write("\r\n")
+        """
+        Sends a CFG-NAV5 UBX message which enables "flight mode", which allows
+        operation at higher altitudes than defaults.
+        Should read up more on this sentence, I'm just copying this
+        byte string from other tracker projects.
+        """
+        # the following is from https://github.com/Chetic/Serenity/blob/master/Serenity.py#L10
+        # bytearray.fromhex("B5 62 06 24 24 00 FF FF 06 03 00 00 00 00 10 27 00 00 05 00 FA 00 FA 00 64 00 2C 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 16 DC")
+        cfg_nav5_class_id = 0x06
+        cfg_nav5_message_id = 0x24
+        payload = bytearray.fromhex("FF FF 06 03 00 00 00 00 10 27 00 00 05 00 FA 00 FA 00 64 00 2C 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00")
+        return self.__send_and_confirm_ubx_packet(cfg_nav5_class_id, cfg_nav5_message_id, payload)
 
 
-    def disable_excessive_reports():
-        self.__set_excessive_reports(enable=False)
+    def reboot(self):
+        """
+        This method REBOOTS THE GPS. Useful for testing/debugging.
+        Not useful at 30000 meters!
+        """
+        # https://gist.github.com/tomazas/3ab51f91cdc418f5704d says to send:
+        # send 0x06, 0x04, 0x04, 0x00, 0xFF, 0x87, 0x00, 0x00
+        return self.__send_and_confirm_ubx_packet(0x06, 0x04, bytearray.fromhex("FF 87 00 00"))
 
+    def __send_and_confirm_ubx_packet(self, class_id, message_id, payload):
+        """
+        Constructs, sends, and waits for an ACK packet for a UBX "binary" packet.
+        User only needs to specify the class & message IDs, and the payload as a bytearray;
+            the header, length and checksum are calculated automatically.
+        Then constructs the corresponding CFG-ACK packet expected, and waits for it.
+        If the ACK packet is not received, returns False.
+        """
+        ubx_packet_header = bytearray.fromhex("B5 62") # constant
+        length_field_bytes = 2 # constant
 
-    def __set_excessive_reports(enable=False):
-        disable_template = "PUBX,40,%s,%d,0,0,0"
-        messages_disable = [
-            "GLL",
-            "GSA",
-            "RMC",
-            "GSV",
-            "VTG",
-        ]
-        for message in messages_disable:
-            disable_command = disable_template % (message, 1 if enable else 0)
-            checksum_int = 0
-            for character in disable_command:
-                checksum_int ^= ord(character)
-            disable_command = "$%s*%x\r\n" % (disable_command, checksum_int)
-            self.port.write(disable_command.encode('ascii'))
+        if self.ubx_read_queue.qsize() > 0:
+            raise Exception("ubx_read_queue must be empty before calling this function")
+
+        prefix = bytearray((class_id, message_id))
+        length = len(payload).to_bytes(length_field_bytes, byteorder='little')
+        checksum = self.__ubx_checksum(prefix + length + payload)
+        packet = ubx_packet_header + prefix + length + payload + checksum
+        self.write_queue.put(packet)
+        print("UBX packet built: {}".format(packet))
+
+        ack_prefix = bytearray.fromhex("05 01")
+        ack_length = int(2).to_bytes(length_field_bytes, byteorder='little')
+        ack_payload = prefix
+        ack_checksum = self.__ubx_checksum(ack_prefix + ack_length + ack_payload)
+        expected_ack = ubx_packet_header + ack_prefix + ack_length + ack_payload + ack_checksum
+        wait_length = 10 # seconds
+        wait_interval = 0.1 # seconds
+        interval_count = 0
+        while True:
+            if interval_count * wait_interval > wait_length:
+                print("UBX packet sent without ACK! This is bad.")
+                break
+            time.sleep(wait_interval) # excessively large to force me to fix race conditions FIXME
+            if self.ubx_read_queue.qsize() > 0:
+                ack = self.ubx_read_queue.get()
+                if ack == expected_ack:
+                    print("UBX packet ACKd: {}".format(ack))
+                elif ack[2:3] == bytearray.fromhex("05 01"):
+                    print("UBX-NAK packet! :(")
+                else:
+                    print("Unknown UBX reply: {}".format(ack))
+                    print("Looking for      : {}".format(expected_ack))
+                return True
+            interval_count += 1
+        return False
+
+    def __ubx_checksum(self, prefix_and_payload):
+        """
+        Calculates a UBX binary packet checksum.
+        Algorithm comes from the u-blox M8 Receiver Description manual section "UBX Checksum"
+        This is an implementation of the 8-Bit Fletcher Algorithm,
+            so there may be a standard library for this.
+        """
+        checksum_a = 0
+        checksum_b = 0
+        for byte in prefix_and_payload:
+            checksum_a = checksum_a + byte
+            checksum_b = checksum_a + checksum_b
+        checksum_a %= 256
+        checksum_b %= 256
+        return bytearray((checksum_a, checksum_b))
+
 
     def read(self):
-        output = self.port.readline()
-        print("GPS: {}\n".format(output))
-        return pynmea2.parse(output.decode('ascii'), check=True)
+        """
+        Returns the most recently received NMEA sentence.
+        """
+        queue_size = self.read_queue.qsize()
+        print("Queue length: {}".format(queue_size))
+        if queue_size == 0 and not self.read_thread.is_alive():
+            raise Exception("queue is empty and read thread is dead. bailing out.")
+        while True:
+            try:
+                # FIXME: only read GGA packets here
+                # in case something else trickles through
+                self.latest_sentence = self.read_queue.get(block=False)
+            except queue.Empty:
+                break
+        return self.latest_sentence
+
+
+    def __io_thread(self):
+        """
+        Singleton thread which will run indefinitely, reading and
+        writing between the gps serial and {read,write}_queue.
+
+        Do not invoke directly, this method never returns.
+        """
+        while True:
+            print(".", end='', flush=True)
+            while self.write_queue.qsize() > 0:
+                to_write = self.write_queue.get()
+                to_write_type = type(to_write)
+                if to_write_type == str:
+                    to_write = to_write.encode('utf-8')
+                print("GPS: write {}: {}".format(to_write_type, to_write))
+                self.port.write(to_write)
+            sentence = self.__read()
+            if sentence:
+                self.read_queue.put(sentence)
+            else:
+                time.sleep(0.1)
+
+
+    def __read(self):
+        """
+        Reads a sentence from the GPS serial port, validates and
+        parses with pynmea2, and returns the pynmea2 sentence object.
+
+        Returns False when no data is available.
+        """
+
+        waiting = self.port.in_waiting
+        if waiting == 0:
+            return False
+        first_byte = self.port.read()
+        if first_byte == b'\xb5': # looks like a UBX proprietary packet
+            self.port.timeout = 10
+            remaining_header = self.port.read(3)
+            length_bytes = self.port.read(2)
+            length = int.from_bytes(length_bytes, byteorder='little')
+            remaining_packet = self.port.read(length + 2) # add 2 for checksum bytes
+            self.port.timeout = self.default_timeout
+            ubx_packet = first_byte + remaining_header + length_bytes + remaining_packet
+            self.ubx_read_queue.put(ubx_packet)
+            return
+        else:
+            line = self.port.readline()
+            line = first_byte + line
+        try:
+            ascii_line = line.decode('ascii')
+        except UnicodeDecodeError as exception:
+            print("GPS reply string decode error on: {}".format(line))
+            return False
+        if ascii_line[0] != "$":
+            print("non-dollar line")
+            return False
+        print("GPS (buf={}) raw line: {}".format(waiting, line))
+        try:
+            nmea_line = pynmea2.parse(ascii_line, check=True)
+        except pynmea2.nmea.ParseError as exception:
+            print(exception)
+            return False
+        return nmea_line

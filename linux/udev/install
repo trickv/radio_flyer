@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+cd $(dirname $(realpath $0))
+
+sudo cp -pv *.rules /etc/udev/rules.d/
+
+sudo udevadm control --reload-rules

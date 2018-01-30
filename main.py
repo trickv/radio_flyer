@@ -22,11 +22,10 @@ PACKET_TEMPLATES = {
         "{num_gps_reads},{temperature},{pressure},{humidity},{uptime}," +
         "{internal_temperature}",
 }
-# TODO: should I send \r\n or can we just all be unix friends from now on?
 # try: http://habitat.habhub.org/genpayload/
 #      payload -> create new
 #      new format wizard
-sentence_template = "$${0}*{1:04X}\n"
+sentence_template = "$${0}*{1:04X}\r\n"
 
 
 def configure_ublox():
@@ -46,13 +45,13 @@ def main():
     try:
         configure_ublox()
     except Exception as e:
-        transmitter.send("Exception when opening GPS serial: {}\n\n".format(e))
+        transmitter.send("Exception when opening GPS serial: {}\r\n\r\n".format(e))
         raise
     rendered_conf = utils.render_conf(conf)
     print(rendered_conf)
     transmitter.send(rendered_conf)
-    transmitter.send("Worlds best tracker software. Buy bitcoin!\n\n")
-    transmitter.send("Thanks to my lovely wife Sarah.\n\n")
+    transmitter.send("Worlds best tracker software. Buy bitcoin!\r\n\r\n")
+    transmitter.send("Thanks to my lovely wife Sarah.\r\n\r\n")
     gps.read.connect_bus()
     setup_bme280()
     lm75_sensor = lib.Lm75()
@@ -109,12 +108,12 @@ def main():
                 })
         else:
             # Oh shit, the GPS is sending things I don't know how to handle
-            crazy = "%s: Unexpected GPS data: %s\n" % (conf['callsign'], gps_location)
+            crazy = "%s: Unexpected GPS data: %s\r\n" % (conf['callsign'], gps_location)
             transmitter.send(crazy)
             if gps_location.sentence_type in ("GLL", "GSA", "RMC", "GSV", "VTG"):
                 # either the initial config of the ublox didn't work, or it's been reset/rebooted.
                 # closing the uart should block until it's done spooling data.
-                transmitter.send("%s: Re-configuring ublox in 10 seconds.\n" % conf['callsign'])
+                transmitter.send("%s: Re-configuring ublox in 10 seconds.\r\n" % conf['callsign'])
                 time.sleep(10)
                 transmitter.close_uart()
                 print("UART closed, go go go")
@@ -126,7 +125,7 @@ def main():
         sentence = sentence_template.format(packet, checksum)
         print("")
         if not had_initial_fix:
-            transmitter.send("%s: do not launch yet\n" % conf['callsign'])
+            transmitter.send("%s: do not launch yet\r\n" % conf['callsign'])
         transmitter.send(sentence)
         num_gps_reads = 0
         sequence += 1
