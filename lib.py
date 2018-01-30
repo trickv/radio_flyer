@@ -1,10 +1,9 @@
 import time
 import os
-import smbus
 import threading
 import queue
-import datetime
 
+import smbus
 import serial
 import wiringpi
 import pynmea2
