@@ -144,6 +144,9 @@ class Gps():
     default_timeout = 0.1 # FIXME low timeout for debugging
 
     def __init__(self):
+        """
+        Configure the GPS device and initialize queues, and start the I/O thread.
+        """
         self.port = serial.Serial('/dev/ttyUSBGPS', 9600, timeout=self.default_timeout)
         self.read_queue = queue.Queue(maxsize=self.maximum_read_queue_size)
         self.write_queue = queue.Queue()
@@ -170,6 +173,9 @@ class Gps():
 
 
     def configure_output_messages(self):
+        """
+        Disables NMEA sentences: GLL, GSA, GSV, RMC, VTG (id 1 to 5)
+        """
         ubx_cfg_class = 0x06
         ubx_cfg_msg = 0x01
         for index in range(1, 6):
@@ -198,6 +204,13 @@ class Gps():
         return self.__send_and_confirm_ubx_packet(0x06, 0x04, bytearray.fromhex("FF 87 00 00"))
 
     def __send_and_confirm_ubx_packet(self, class_id, message_id, payload):
+        """
+        Constructs, sends, and waits for an ACK packet for a UBX "binary" packet.
+        User only needs to specify the class & message IDs, and the payload as a bytearray;
+            the header, length and checksum are calculated automatically.
+        Then constructs the corresponding CFG-ACK packet expected, and waits for it.
+        If the ACK packet is not received, returns False.
+        """
         ubx_packet_header = bytearray.fromhex("B5 62") # constant
         length_field_bytes = 2 # constant
 
@@ -255,6 +268,9 @@ class Gps():
 
 
     def read(self):
+        """
+        Returns the most recently received NMEA sentence.
+        """
         queue_size = self.read_queue.qsize()
         print("Queue length: {}".format(queue_size))
         if queue_size == 0 and not self.read_thread.is_alive():
@@ -298,25 +314,6 @@ class Gps():
         parses with pynmea2, and returns the pynmea2 sentence object.
 
         Returns False when no data is available.
-
-
-        FIXME: Exceptions to catch:
-
-        Partial sentence with non-ascii characters which fails to decode:
-        GPS: b'\x05\xb1073705.00,5133.19017,N,00011.63010,W,1,12,0.66,78.4,M,45.7,M,,*66\r\n'
-        UnicodeDecodeError: 'ascii' code  File "./read-gps.py", line 10, in <module>
-         c can't decode byte 0xb1 in position 1: ordinal not in range(128)
-        return pynmea2.parse(output.decode('ascii'), check=True)
-
-        UnicodeDecodeError: 'ascii' codec can't decode byte 0xb1 in position 1: ordinal not in range(128)
-
-        partial sentence again, but produces a pynmea parser error:
-        pynmea2.nmea.ParseError: ('could not parse data', '7.00,5133.19072,N,00011.63259,W,1,12,0.70,73.4,M,45.7,M,,*69\r\n')
-
-
-
-        GPS: b')\x92b\x82r\xb2\x8ab\xba\xa2r\xaabj\xb145.7,M,,*6B\r\n'
-        UnicodeDecodeError: 'ascii' codec can't decode byte 0x92 in position 1: ordinal not in range(128)
         """
 
         waiting = self.port.in_waiting
