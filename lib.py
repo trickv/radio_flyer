@@ -3,9 +3,9 @@ import os
 import smbus
 
 import serial
-import picamera
 import wiringpi
 import pynmea2
+import picamera # pylint: disable=import-error
 
 
 class Camera():
