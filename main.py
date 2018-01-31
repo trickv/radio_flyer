@@ -29,14 +29,14 @@ def main():
     sequence = 0
     had_initial_fix = False
     transmitter = lib.Transmitter()
-    transmitter.send("HAB tracker callsign {} starting up.\r\n".format(CALLSIGN))
-    transmitter.send("Worlds best tracker software.\r\n")
-    transmitter.send("Thanks to my lovely wife Sarah.\r\n")
+    transmitter.send("HAB tracker callsign {} starting up.\n".format(CALLSIGN))
+    transmitter.send("Worlds best tracker software.\n")
+    transmitter.send("Thanks to my lovely wife Sarah.\n")
     gps = lib.Gps()
     bme280_sensor = lib.Bme280()
     lm75_sensor = lib.Lm75()
     crc16f = crcmod.predefined.mkCrcFun('crc-ccitt-false')
-    transmitter.send("Tracker up and running. Lets fly!\r\n\r\n")
+    transmitter.send("Tracker up and running. Lets fly!\n\n")
 
     while True:
         gps_location = None
@@ -75,7 +75,7 @@ def main():
         checksum = crc16f(packet.encode('ascii'))
         sentence = SENTENCE_TEMPLATE.format(packet, checksum)
         if not had_initial_fix:
-            transmitter.send("{}: do not launch yet\r\n".format(CALLSIGN))
+            transmitter.send("{}: do not launch yet\n".format(CALLSIGN))
         transmitter.send(sentence)
         sequence += 1
 
