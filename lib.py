@@ -173,7 +173,7 @@ def __ubx_checksum(prefix_and_payload):
     return bytearray((checksum_a, checksum_b))
 
 
-def __ubx_assemble_packet(class_id, message_id, payload):
+def ubx_assemble_packet(class_id, message_id, payload):
     # UBX protocol constants:
     ubx_packet_header = bytearray.fromhex("B5 62") # constant
     length_field_bytes = 2 # constant
@@ -286,15 +286,15 @@ class Gps():
 
         if self.ubx_read_queue.qsize() > 0:
             raise Exception("ubx_read_queue must be empty before calling this function")
-        send_packet = __ubx_assemble_packet(class_id, message_id, payload)
+        send_packet = ubx_assemble_packet(class_id, message_id, payload)
         self.write_queue.put(send_packet)
         print("UBX packet built: {}".format(send_packet))
 
-        expected_ack = __ubx_assemble_packet(0x05, 0x01, bytearray((class_id, message_id)))
+        expected_ack = ubx_assemble_packet(0x05, 0x01, bytearray((class_id, message_id)))
 
         wait_length = 10 # seconds
         wait_interval = 0.1 # seconds
-        for _ in range(0, wait_length / wait_interval):
+        for _ in range(0, int(wait_length / wait_interval)):
             time.sleep(wait_interval) # excessively large to force me to fix race conditions FIXME
             if self.ubx_read_queue.qsize() > 0:
                 ack = self.ubx_read_queue.get()
@@ -375,6 +375,7 @@ class Gps():
             self.port.timeout = self.default_timeout
             ubx_packet = first_byte + remaining_header + length_bytes + remaining_packet
             self.ubx_read_queue.put(ubx_packet)
+            print("UBX raw packet received: {}".format(ubx_packet))
             return True
         else:
             line = self.port.readline()
