@@ -119,14 +119,54 @@ class Transmitter():
                                   self.rtty_parity, self.rtty_stopbits)
 
     def close_uart(self):
+        """ Close the UART (doubt I'll need this anymore. """
         self.uart.close()
         self.uart = None
 
     def send(self, string):
+        """
+        Transmit the supplied string in ASCII format, and debug to console
+        """
         print("TX: {0}".format(string), end="")
         self.uart.write(string.encode('ascii'))
+   
+
+def __ubx_checksum(prefix_and_payload):
+    """
+    Calculates a UBX binary packet checksum.
+    Algorithm comes from the u-blox M8 Receiver Description manual section "UBX Checksum"
+    This is an implementation of the 8-Bit Fletcher Algorithm,
+        so there may be a standard library for this.
+    """
+    checksum_a = 0
+    checksum_b = 0
+    for byte in prefix_and_payload:
+        checksum_a = checksum_a + byte
+        checksum_b = checksum_a + checksum_b
+    checksum_a %= 256
+    checksum_b %= 256
+    return bytearray((checksum_a, checksum_b))
+
+
+def __ubx_assemble_packet(class_id, message_id, payload):
+    # UBX protocol constants:
+    ubx_packet_header = bytearray.fromhex("B5 62") # constant
+    length_field_bytes = 2 # constant
+
+    prefix = bytearray((class_id, message_id))
+    length = len(payload).to_bytes(length_field_bytes, byteorder='little')
+    return ubx_packet_header \
+        + prefix \
+        + length \
+        + payload \
+        + __ubx_checksum(prefix + length + payload)
 
 class Gps():
+    """
+    Encapsulates the GPS receiver.
+    Contains a PySerial UART connection, and a I/O thread.
+    Also includes functions to configure the GPS, and generate "UBX" messages.
+    """
     latest_sentence = None
     port = None
     read_queue = None
@@ -218,60 +258,34 @@ class Gps():
         Then constructs the corresponding CFG-ACK packet expected, and waits for it.
         If the ACK packet is not received, returns False.
         """
-        ubx_packet_header = bytearray.fromhex("B5 62") # constant
-        length_field_bytes = 2 # constant
 
         if self.ubx_read_queue.qsize() > 0:
             raise Exception("ubx_read_queue must be empty before calling this function")
+        send_packet = __ubx_assemble_packet(class_id, message_id, payload)
+        self.write_queue.put(send_packet)
+        print("UBX packet built: {}".format(send_packet))
 
-        prefix = bytearray((class_id, message_id))
-        length = len(payload).to_bytes(length_field_bytes, byteorder='little')
-        checksum = self.__ubx_checksum(prefix + length + payload)
-        packet = ubx_packet_header + prefix + length + payload + checksum
-        self.write_queue.put(packet)
-        print("UBX packet built: {}".format(packet))
+        expected_ack = __ubx_assemble_packet(0x05, 0x01, bytearray((class_id, message_id)))
 
-        ack_prefix = bytearray.fromhex("05 01")
-        ack_length = int(2).to_bytes(length_field_bytes, byteorder='little')
-        ack_payload = prefix
-        ack_checksum = self.__ubx_checksum(ack_prefix + ack_length + ack_payload)
-        expected_ack = ubx_packet_header + ack_prefix + ack_length + ack_payload + ack_checksum
         wait_length = 10 # seconds
         wait_interval = 0.1 # seconds
-        interval_count = 0
-        while True:
-            if interval_count * wait_interval > wait_length:
-                print("UBX packet sent without ACK! This is bad.")
-                break
+        for iteration in range(0, wait_length / wait_interval):
             time.sleep(wait_interval) # excessively large to force me to fix race conditions FIXME
             if self.ubx_read_queue.qsize() > 0:
                 ack = self.ubx_read_queue.get()
                 if ack == expected_ack:
                     print("UBX packet ACKd: {}".format(ack))
+                    return True
                 elif ack[2:3] == bytearray.fromhex("05 01"):
                     print("UBX-NAK packet! :(")
+                    return False
                 else:
                     print("Unknown UBX reply: {}".format(ack))
                     print("Looking for      : {}".format(expected_ack))
                 return True
-            interval_count += 1
+        print("UBX packet sent without ACK! This is bad.")
         return False
 
-    def __ubx_checksum(self, prefix_and_payload):
-        """
-        Calculates a UBX binary packet checksum.
-        Algorithm comes from the u-blox M8 Receiver Description manual section "UBX Checksum"
-        This is an implementation of the 8-Bit Fletcher Algorithm,
-            so there may be a standard library for this.
-        """
-        checksum_a = 0
-        checksum_b = 0
-        for byte in prefix_and_payload:
-            checksum_a = checksum_a + byte
-            checksum_b = checksum_a + checksum_b
-        checksum_a %= 256
-        checksum_b %= 256
-        return bytearray((checksum_a, checksum_b))
 
 
     def read(self):
