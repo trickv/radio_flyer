@@ -1,3 +1,6 @@
+"""
+Core libraries for the tracker.
+"""
 import time
 import os
 import threading
@@ -11,6 +14,13 @@ import picamera # pylint: disable=import-error
 
 
 class Camera():
+    """
+    Camera class, which encapsulates the Raspberry Pi camera and
+    tries to make it easy for an external program to just
+    "take a bunch of photos as we fly"
+
+    This isn't 100% stable so I'll drive it from camera.py for the first flight
+    """
     delay = 2
     free_space_threshold = 500 * 1024 * 1024 # 500MiB
 
@@ -39,6 +49,11 @@ class Camera():
         self.output_directory = directory
 
     def take_photo(self):
+        """
+        Takes a photo and writes the resulting image to the output directory.
+        Will skip taking a photo if the camera isn't ready from previous runs,
+        and will detect repeat errors and disable the camera until restart.
+        """
         if not self.camera_ready:
             print("Camera not ready.")
             return
@@ -61,7 +76,7 @@ class Camera():
             time.sleep(self.delay)
             camera.capture(output_file)
             self.fail_counter = 0
-        except Exception as exception:
+        except Exception as exception: # pylint: disable=broad-except
             self.fail_counter += 1
             if self.fail_counter > 10:
                 self.camera_ready = False
@@ -75,8 +90,8 @@ class Camera():
 
 
 class Lm75():
-
     """
+    LM75 I2C temperature sensor reading class.
     By default the address of LM75 sensors are set to 0x48
     aka A0, A1, and A2 are set to GND (0v).
     """
@@ -85,7 +100,9 @@ class Lm75():
         self.bus = smbus.SMBus(bus_id)
 
     def get_temperature(self):
-        # Read I2C data and calculate temperature
+        """
+        Read I2C data and calculate temperature
+        """
         raw = self.bus.read_word_data(self.address, 0) & 0xFFFF
         raw = ((raw << 8) & 0xFF00) + (raw >> 8)
         temperature = (raw / 32.0) / 8.0
@@ -93,6 +110,11 @@ class Lm75():
 
 
 class Transmitter():
+    """
+    Encapsultes the radio transmitter which is connected by:
+    * Output "enable" relay
+    * UART
+    """
     uart = None
     enable_gpio_pin = 23
 
@@ -107,11 +129,13 @@ class Transmitter():
         self.enable_tx()
 
     def enable_tx(self):
+        """ Enable the TX-ENABLE GPIO pin """
         wiringpi.wiringPiSetupGpio()
         wiringpi.pinMode(self.enable_gpio_pin, 1)
         wiringpi.digitalWrite(self.enable_gpio_pin, 1)
 
     def open_uart(self):
+        """ Open the UART port with PySerial """
         if self.uart:
             raise Exception("UART previously opened?")
         self.uart = serial.Serial('/dev/ttyAMA0',
@@ -129,7 +153,7 @@ class Transmitter():
         """
         print("TX: {0}".format(string), end="")
         self.uart.write(string.encode('ascii'))
-   
+
 
 def __ubx_checksum(prefix_and_payload):
     """
@@ -269,7 +293,7 @@ class Gps():
 
         wait_length = 10 # seconds
         wait_interval = 0.1 # seconds
-        for iteration in range(0, wait_length / wait_interval):
+        for _ in range(0, wait_length / wait_interval):
             time.sleep(wait_interval) # excessively large to force me to fix race conditions FIXME
             if self.ubx_read_queue.qsize() > 0:
                 ack = self.ubx_read_queue.get()
@@ -336,7 +360,7 @@ class Gps():
 
         Returns False when no data is available.
         """
-
+        # FIXME: refactor this directly into io_thread() above.
         waiting = self.port.in_waiting
         if waiting == 0:
             return False
@@ -350,7 +374,7 @@ class Gps():
             self.port.timeout = self.default_timeout
             ubx_packet = first_byte + remaining_header + length_bytes + remaining_packet
             self.ubx_read_queue.put(ubx_packet)
-            return
+            return True
         else:
             line = self.port.readline()
             line = first_byte + line
