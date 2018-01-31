@@ -8,4 +8,4 @@ install:
   - cat requirements.pip | grep -v ^picamera$ | pip install -r /dev/stdin
 
 script:
-  - pylint --disable too-few-public-methods *.py */*.py
+  - pylint --disable too-few-public-methods *.py
