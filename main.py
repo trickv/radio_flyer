@@ -68,7 +68,7 @@ def main():
             packet_template = PACKET_TEMPLATES['operational']
             packet_params.update({
                 'alt': int(round(gps_location.altitude, 0)),
-                'lat': round(gps_location.latitude, 6), # FIXME: what does dl-fldigi require? see serenity code.
+                'lat': round(gps_location.latitude, 6),
                 'lon': round(gps_location.longitude, 6),
             })
         packet = packet_template.format(**packet_params)
