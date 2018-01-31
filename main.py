@@ -21,7 +21,7 @@ PACKET_TEMPLATES = {
 # try: http://habitat.habhub.org/genpayload/
 #      payload -> create new
 #      new format wizard
-SENTENCE_TEMPLATE = "$${0}*{1:04X}\r\n"
+SENTENCE_TEMPLATE = "$${0}*{1:04X}\n"
 
 
 def main():
