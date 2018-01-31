@@ -204,7 +204,7 @@ class Gps():
     # from the GPS and throw, rather than sit there silent forever.
     maximum_read_queue_size = 1000
 
-    default_timeout = 0.1 # FIXME low timeout for debugging
+    default_timeout = 0.1 # Serial port read timeout. Should be quite low.
 
     def __init__(self):
         """
@@ -346,21 +346,19 @@ class Gps():
                     to_write = to_write.encode('utf-8')
                 print("GPS: write {}: {}".format(to_write_type, to_write))
                 self.port.write(to_write)
-            sentence = self.__read()
-            if sentence:
-                self.read_queue.put(sentence)
-            else:
+            got_some_data = self.__read()
+            if not got_some_data:
                 time.sleep(0.1)
 
 
     def __read(self):
         """
-        Reads a sentence from the GPS serial port, validates and
-        parses with pynmea2, and returns the pynmea2 sentence object.
+        Reads a from the GPS serial port.
+        Interprets between UBX and NMEA packets and places into appropriate queues.
+        For NMEA packets, they are parsed by pynmea2 and corrupt packets are discarded.
 
-        Returns False when no data is available.
+        Returns False when no data is available, True when data has been read.
         """
-        # FIXME: refactor this directly into io_thread() above.
         waiting = self.port.in_waiting
         if waiting == 0:
             return False
@@ -392,4 +390,5 @@ class Gps():
         except pynmea2.nmea.ParseError as exception:
             print(exception)
             return False
-        return nmea_line
+        self.read_queue.put(nmea_line)
+        return True
