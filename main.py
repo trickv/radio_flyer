@@ -73,9 +73,8 @@ def main():
         packet = packet_template.format(**packet_params)
         checksum = crc16f(packet.encode('ascii'))
         sentence = SENTENCE_TEMPLATE.format(packet, checksum)
-        print("")
         if not had_initial_fix:
-            transmitter.send("%s: do not launch yet\r\n" % conf['callsign'])
+            transmitter.send("{}: do not launch yet\r\n".format(conf['callsign']))
         transmitter.send(sentence)
         sequence += 1
 
