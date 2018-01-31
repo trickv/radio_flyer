@@ -122,7 +122,7 @@ class Bme280():
         bme280_i2c.set_default_i2c_address(0x76)
         bme280.setup()
 
-    def read(self):
+    def read(self): # pylint: disable=no-self-use
         """
         Read I2C data
         """
@@ -193,6 +193,10 @@ def __ubx_checksum(prefix_and_payload):
 
 
 def ubx_assemble_packet(class_id, message_id, payload):
+    """
+    Assembles and returns a UBX packet from a class id,
+    message id and payload bytearray.
+    """
     # UBX protocol constants:
     ubx_packet_header = bytearray.fromhex("B5 62") # constant
     length_field_bytes = 2 # constant
@@ -423,5 +427,6 @@ class Gps():
         return True
 
     def debug(self, message):
+        """ prints a debug message to stdout if self_debug is set True """
         if self.debug_mode:
             print(message)
