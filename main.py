@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
+""" Main tracker loop """
 
 import time
 
-import pynmea2
 import crcmod
-from bme280 import bme280, bme280_i2c
 import lib
 
 import utils
@@ -12,25 +11,20 @@ from conf import CONF as conf
 
 PACKET_TEMPLATES = {
     'operational': "{callsign},{seq},{time},{lat},{lon},{alt}," +
-        "{num_sats},{temperature},{pressure},{humidity}," +
-        "{internal_temperature}",
+                   "{num_sats},{temperature},{pressure},{humidity}," +
+                   "{internal_temperature}",
     'no_fix': "{callsign},{seq},NOFIX,{time},{num_sats}," +
-        "{temperature},{pressure},{humidity},{uptime}," +
-        "{internal_temperature}",
+              "{temperature},{pressure},{humidity},{uptime}," +
+              "{internal_temperature}",
 }
 # try: http://habitat.habhub.org/genpayload/
 #      payload -> create new
 #      new format wizard
-sentence_template = "$${0}*{1:04X}\r\n"
-
-
-def setup_bme280():
-    bme280_i2c.set_default_bus(1)
-    bme280_i2c.set_default_i2c_address(0x76)
-    bme280.setup()
+SENTENCE_TEMPLATE = "$${0}*{1:04X}\r\n"
 
 
 def main():
+    """ Main tracker loop. Never exits. """
     sequence = 0
     had_initial_fix = False
     transmitter = lib.Transmitter()
@@ -40,7 +34,7 @@ def main():
     transmitter.send("Worlds best tracker software. Buy bitcoin!\r\n\r\n")
     transmitter.send("Thanks to my lovely wife Sarah.\r\n\r\n")
     gps = lib.Gps()
-    setup_bme280()
+    bme280_sensor = lib.Bme280()
     lm75_sensor = lib.Lm75()
     crc16f = crcmod.predefined.mkCrcFun('crc-ccitt-false')
 
@@ -51,7 +45,7 @@ def main():
             utils.print_status_char(".")
             time.sleep(2)
             continue
-        bme280_data = bme280.read_all()
+        bme280_data = bme280_sensor.read()
         packet_params = {
             'callsign': conf['callsign'],
             'seq': sequence,
@@ -96,12 +90,11 @@ def main():
             continue
         packet = packet_template.format(**packet_params)
         checksum = crc16f(packet.encode('ascii'))
-        sentence = sentence_template.format(packet, checksum)
+        sentence = SENTENCE_TEMPLATE.format(packet, checksum)
         print("")
         if not had_initial_fix:
             transmitter.send("%s: do not launch yet\r\n" % conf['callsign'])
         transmitter.send(sentence)
-        num_gps_reads = 0
         sequence += 1
 
 

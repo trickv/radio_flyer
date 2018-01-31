@@ -11,6 +11,7 @@ import serial
 import wiringpi
 import pynmea2
 import pynmea2.types.talker
+from bme280 import bme280, bme280_i2c
 import picamera # pylint: disable=import-error
 
 
@@ -108,6 +109,24 @@ class Lm75():
         raw = ((raw << 8) & 0xFF00) + (raw >> 8)
         temperature = (raw / 32.0) / 8.0
         return temperature
+
+
+class Bme280():
+    """
+    Bme280 I2C temperature sensor reading class.
+    """
+    def __init__(self, address=0x76, bus_id=1):
+        self.address = address
+        self.bus = smbus.SMBus(bus_id)
+        bme280_i2c.set_default_bus(1)
+        bme280_i2c.set_default_i2c_address(0x76)
+        bme280.setup()
+
+    def read(self):
+        """
+        Read I2C data
+        """
+        return bme280.read_all()
 
 
 class Transmitter():
