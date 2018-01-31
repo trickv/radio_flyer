@@ -10,6 +10,7 @@ import smbus
 import serial
 import wiringpi
 import pynmea2
+import pynmea2.types.talker
 import picamera # pylint: disable=import-error
 
 
@@ -322,9 +323,11 @@ class Gps():
             raise Exception("queue is empty and read thread is dead. bailing out.")
         while True:
             try:
-                # FIXME: only read GGA packets here
-                # in case something else trickles through
-                self.latest_sentence = self.read_queue.get(block=False)
+                sentence = self.read_queue.get(block=False)
+                if isinstance(sentence, pynmea2.types.talker.GGA):
+                    self.latest_sentence = sentence
+                else:
+                    print("GPS: Unhandled message type received: {}".format(sentence))
             except queue.Empty:
                 break
         return self.latest_sentence
