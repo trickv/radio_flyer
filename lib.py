@@ -207,6 +207,8 @@ class Gps():
 
     default_timeout = 0.1 # Serial port read timeout. Should be quite low.
 
+    debug_mode = False # change me to see debug output from this class
+
     def __init__(self):
         """
         Configure the GPS device and initialize queues, and start the I/O thread.
@@ -227,12 +229,12 @@ class Gps():
         function and put necessary calls in __init__()
         """
         self.configure_output_messages()
-        time.sleep(3)
+        time.sleep(2)
         self.enable_flight_mode()
-        time.sleep(5)
-        self.reboot() # for funsies, FIXME, remove this before flight of course!
-        time.sleep(5)
-        self.configure_output_messages()
+        #time.sleep(5)
+        #self.reboot() # for funsies, FIXME, remove this before flight of course!
+        #time.sleep(5)
+        #self.configure_output_messages()
 
 
     def configure_output_messages(self):
@@ -260,10 +262,14 @@ class Gps():
             https://github.com/Chetic/Serenity/blob/master/Serenity.py#L10
             https://github.com/PiInTheSky/pits/blob/master/tracker/gps.c#L423
         """
+        print("GPS: enabling flight mode")
         cfg_nav5_class_id = 0x06
         cfg_nav5_message_id = 0x24
         payload = bytearray.fromhex("FF FF 06 03 00 00 00 00 10 27 00 00 05 00 FA 00 FA 00 64 00 2C 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00") # pylint: disable=line-too-long
-        return self.__send_and_confirm_ubx_packet(cfg_nav5_class_id, cfg_nav5_message_id, payload)
+        ack_ok = self.__send_and_confirm_ubx_packet(cfg_nav5_class_id, cfg_nav5_message_id, payload)
+        if not ack_ok:
+            raise Exception("Failed to configure GPS for flight mode.")
+        print("GPS: flight mode enabled.")
 
 
     def reboot(self):
@@ -288,7 +294,7 @@ class Gps():
             raise Exception("ubx_read_queue must be empty before calling this function")
         send_packet = ubx_assemble_packet(class_id, message_id, payload)
         self.write_queue.put(send_packet)
-        print("UBX packet built: {}".format(send_packet))
+        self.debug("UBX packet built: {}".format(send_packet))
 
         expected_ack = ubx_assemble_packet(0x05, 0x01, bytearray((class_id, message_id)))
 
@@ -299,14 +305,14 @@ class Gps():
             if self.ubx_read_queue.qsize() > 0:
                 ack = self.ubx_read_queue.get()
                 if ack == expected_ack:
-                    print("UBX packet ACKd: {}".format(ack))
+                    self.debug("UBX packet ACKd: {}".format(ack))
                     return True
                 elif ack[2:3] == bytearray.fromhex("05 01"):
-                    print("UBX-NAK packet! :(")
+                    print("UBX-NAK packet! {}".format(ack))
                     return False
                 else:
-                    print("Unknown UBX reply: {}".format(ack))
-                    print("Looking for      : {}".format(expected_ack))
+                    self.debug("Unknown UBX reply: {}".format(ack))
+                    self.debug("Looking for      : {}".format(expected_ack))
                 return True
         print("UBX packet sent without ACK! This is bad.")
         return False
@@ -318,7 +324,7 @@ class Gps():
         Returns the most recently received NMEA sentence.
         """
         queue_size = self.read_queue.qsize()
-        print("Queue length: {}".format(queue_size))
+        self.debug("Queue length: {}".format(queue_size))
         if queue_size == 0 and not self.read_thread.is_alive():
             raise Exception("queue is empty and read thread is dead. bailing out.")
         while True:
@@ -327,7 +333,7 @@ class Gps():
                 if isinstance(sentence, pynmea2.types.talker.GGA):
                     self.latest_sentence = sentence
                 else:
-                    print("GPS: Unhandled message type received: {}".format(sentence))
+                    self.debug("GPS: Unhandled message type received: {}".format(sentence))
             except queue.Empty:
                 break
         return self.latest_sentence
@@ -340,14 +346,14 @@ class Gps():
 
         Do not invoke directly, this method never returns.
         """
+        print("GPS: I/O thread started")
         while True:
-            print(".", end='', flush=True)
             while self.write_queue.qsize() > 0:
                 to_write = self.write_queue.get()
                 to_write_type = type(to_write)
                 if to_write_type == str:
                     to_write = to_write.encode('utf-8')
-                print("GPS: write {}: {}".format(to_write_type, to_write))
+                self.debug("GPS: write {}: {}".format(to_write_type, to_write))
                 self.port.write(to_write)
             got_some_data = self.__read()
             if not got_some_data:
@@ -375,7 +381,7 @@ class Gps():
             self.port.timeout = self.default_timeout
             ubx_packet = first_byte + remaining_header + length_bytes + remaining_packet
             self.ubx_read_queue.put(ubx_packet)
-            print("UBX raw packet received: {}".format(ubx_packet))
+            self.debug("UBX raw packet received: {}".format(ubx_packet))
             return True
         else:
             line = self.port.readline()
@@ -383,16 +389,20 @@ class Gps():
         try:
             ascii_line = line.decode('ascii')
         except UnicodeDecodeError as exception:
-            print("GPS reply string decode error on: {}".format(line))
+            self.debug("GPS reply string decode error on: {}".format(line))
             return False
         if ascii_line[0] != "$":
-            print("non-dollar line")
+            self.debug("non-dollar line")
             return False
-        print("GPS (buf={}) raw line: {}".format(waiting, line))
+        self.debug("GPS (buf={}) raw line: {}".format(waiting, line))
         try:
             nmea_line = pynmea2.parse(ascii_line, check=True)
         except pynmea2.nmea.ParseError as exception:
-            print(exception)
+            self.debug(exception)
             return False
         self.read_queue.put(nmea_line)
         return True
+
+    def debug(self, message):
+        if self.debug_mode:
+            print(message)
