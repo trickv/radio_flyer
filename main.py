@@ -29,9 +29,8 @@ def main():
     had_initial_fix = False
     transmitter = lib.Transmitter()
     rendered_conf = utils.render_conf(conf)
-    print(rendered_conf)
     transmitter.send(rendered_conf)
-    transmitter.send("Worlds best tracker software. Buy bitcoin!\r\n\r\n")
+    transmitter.send("Worlds best tracker software.\r\n\r\n")
     transmitter.send("Thanks to my lovely wife Sarah.\r\n\r\n")
     gps = lib.Gps()
     bme280_sensor = lib.Bme280()
@@ -54,40 +53,23 @@ def main():
             'pressure': round(bme280_data.pressure, 2),
             'internal_temperature': lm75_sensor.get_temperature(),
         }
-        if gps_location.sentence_type == 'GGA':
-            timestamp = gps_location.timestamp.isoformat() if gps_location.timestamp else "00:00:00"
+        packet_params.update({
+            'num_sats': int(gps_location.num_sats),
+            'time': gps_location.timestamp.isoformat() if gps_location.timestamp else "00:00:00",
+        })
+        if gps_location.gps_qual == 0: # we have no GPS fix
+            packet_template = PACKET_TEMPLATES['no_fix']
             packet_params.update({
-                'num_sats': int(gps_location.num_sats),
-                'time': timestamp,
+                'uptime': utils.uptime()
             })
-            if gps_location.gps_qual == 0: # we have no GPS fix
-                packet_template = PACKET_TEMPLATES['no_fix']
-                packet_params.update({
-                    'uptime': utils.uptime()
-                })
-            else:
-                had_initial_fix = True
-                packet_template = PACKET_TEMPLATES['operational']
-                packet_params.update({
-                    'alt': int(round(gps_location.altitude, 0)),
-                    'lat': round(gps_location.latitude, conf['coordinate_precision']), # FIXME: what does dl-fldigi require? see serenity code.
-                    'lon': round(gps_location.longitude, conf['coordinate_precision']),
-                })
         else:
-            # Oh shit, the GPS is sending things I don't know how to handle
-            # FIXME remove this else, this is all unncessary code! :)
-            crazy = "%s: Unexpected GPS data: %s\r\n" % (conf['callsign'], gps_location)
-            transmitter.send(crazy)
-            if gps_location.sentence_type in ("GLL", "GSA", "RMC", "GSV", "VTG"):
-                # either the initial config of the ublox didn't work, or it's been reset/rebooted.
-                # closing the uart should block until it's done spooling data.
-                transmitter.send("%s: Re-configuring ublox in 10 seconds.\r\n" % conf['callsign'])
-                time.sleep(10)
-                transmitter.close_uart()
-                print("UART closed, go go go")
-                #configure_ublox()
-                transmitter.open_uart()
-            continue
+            had_initial_fix = True
+            packet_template = PACKET_TEMPLATES['operational']
+            packet_params.update({
+                'alt': int(round(gps_location.altitude, 0)),
+                'lat': round(gps_location.latitude, conf['coordinate_precision']), # FIXME: what does dl-fldigi require? see serenity code.
+                'lon': round(gps_location.longitude, conf['coordinate_precision']),
+            })
         packet = packet_template.format(**packet_params)
         checksum = crc16f(packet.encode('ascii'))
         sentence = SENTENCE_TEMPLATE.format(packet, checksum)
