@@ -36,7 +36,7 @@ def main():
     bme280_sensor = lib.Bme280()
     lm75_sensor = lib.Lm75()
     crc16f = crcmod.predefined.mkCrcFun('crc-ccitt-false')
-    transmitter.send("Tracker up and running. Lets fly!\r\n")
+    transmitter.send("Tracker up and running. Lets fly!\r\n\r\n")
 
     while True:
         gps_location = None
