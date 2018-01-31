@@ -7,7 +7,8 @@ import crcmod
 import lib
 
 import utils
-from conf import CONF as conf
+
+CALLSIGN = "RADIOFLYER"
 
 PACKET_TEMPLATES = {
     'operational': "{callsign},{seq},{time},{lat},{lon},{alt}," +
@@ -28,14 +29,14 @@ def main():
     sequence = 0
     had_initial_fix = False
     transmitter = lib.Transmitter()
-    rendered_conf = utils.render_conf(conf)
-    transmitter.send(rendered_conf)
-    transmitter.send("Worlds best tracker software.\r\n\r\n")
-    transmitter.send("Thanks to my lovely wife Sarah.\r\n\r\n")
+    transmitter.send("HAB tracker callsign {} starting up.\r\n".format(CALLSIGN))
+    transmitter.send("Worlds best tracker software.\r\n")
+    transmitter.send("Thanks to my lovely wife Sarah.\r\n")
     gps = lib.Gps()
     bme280_sensor = lib.Bme280()
     lm75_sensor = lib.Lm75()
     crc16f = crcmod.predefined.mkCrcFun('crc-ccitt-false')
+    transmitter.send("Tracker up and running. Lets fly!\r\n")
 
     while True:
         gps_location = None
@@ -46,7 +47,7 @@ def main():
             continue
         bme280_data = bme280_sensor.read()
         packet_params = {
-            'callsign': conf['callsign'],
+            'callsign': CALLSIGN,
             'seq': sequence,
             'temperature': round(bme280_data.temperature, 2),
             'humidity': round(bme280_data.humidity, 2),
@@ -67,14 +68,14 @@ def main():
             packet_template = PACKET_TEMPLATES['operational']
             packet_params.update({
                 'alt': int(round(gps_location.altitude, 0)),
-                'lat': round(gps_location.latitude, conf['coordinate_precision']), # FIXME: what does dl-fldigi require? see serenity code.
-                'lon': round(gps_location.longitude, conf['coordinate_precision']),
+                'lat': round(gps_location.latitude, 6), # FIXME: what does dl-fldigi require? see serenity code.
+                'lon': round(gps_location.longitude, 6),
             })
         packet = packet_template.format(**packet_params)
         checksum = crc16f(packet.encode('ascii'))
         sentence = SENTENCE_TEMPLATE.format(packet, checksum)
         if not had_initial_fix:
-            transmitter.send("{}: do not launch yet\r\n".format(conf['callsign']))
+            transmitter.send("{}: do not launch yet\r\n".format(CALLSIGN))
         transmitter.send(sentence)
         sequence += 1
 
