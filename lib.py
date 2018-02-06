@@ -356,7 +356,7 @@ class Gps():
                 if isinstance(sentence, pynmea2.types.talker.GGA):
                     self.latest_sentence = sentence
                 else:
-                    self.debug("GPS: Unhandled message type received: {}".format(sentence))
+                    print("GPS: Unhandled message type received: {}".format(sentence))
             except queue.Empty:
                 break
         return self.latest_sentence
