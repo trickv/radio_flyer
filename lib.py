@@ -171,7 +171,7 @@ class Transmitter():
         """
         Transmit the supplied string in ASCII format, and debug to console
         """
-        print("TX: {0}".format(string), end="")
+        print("TX: {0}".format(string), end="", flush=True)
         self.uart.write(string.encode('ascii'))
 
 
