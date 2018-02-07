@@ -62,11 +62,11 @@ class Camera():
         filesystem_status = os.statvfs(self.output_directory)
         free_space_bytes = filesystem_status.f_bavail * filesystem_status.f_bsize
         if free_space_bytes < self.free_space_threshold:
-            print("Low on disk space: {}".format(free_space_bytes))
+            print("Low on disk space: {}".format(free_space_bytes), flush=True)
             return
         self.sequence += 1
         output_file = "{0}/{1}.jpg".format(self.output_directory, self.sequence)
-        print("Camera: taking picture to {}".format(output_file))
+        print("Camera: taking picture to {}".format(output_file), flush=True)
         if os.path.exists(output_file):
             print("output file %s exists, skipping" % output_file)
             return
