@@ -418,6 +418,7 @@ class Gps():
             self.debug("non-dollar line")
             return False
         self.debug("GPS (buf={}) raw line: {}".format(waiting, line))
+        print("GPS: {}\n".format(ascii_line.strip()), flush=True)
         try:
             nmea_line = pynmea2.parse(ascii_line, check=True)
         except pynmea2.nmea.ParseError as exception:
