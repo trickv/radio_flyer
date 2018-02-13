@@ -1,5 +1,7 @@
 Pi Camera:
 * Change camera output file names to be zero padded 6 digits
+* Some kind of external output, or tracker RTTY, indicating that Pi cam is online
+** Debug switch which causes RTTY to say things?
 
 Pi tracker:
 * Read up on bluetooth initialization; maybe I need to configure this?
@@ -13,8 +15,14 @@ Feb 10 12:46:03 raspberrypi systemd[1]: hciuart.service: Failed with result 'exi
 * Have a README_ABOUT_THIS_SCIENCE_EXPERIMENT.txt on the /boot partition just in case someone discovers the tracker months / years later.
 * Sync GPS clock to system
 * NOFIX sentence puts me in bermuda?
+* Send 1 decimal point of altitude precision
+* Buy another GPS antenna and shorten lead; move GPS board 2cm in to fit inside box
 
 Canon A810:
 * Canon A810 clock sync
 * Take photos more frequently
 * Sharpen / quality? Tinker with infinity focus
+
+Launch procedure:
+* Take a photo of a RTC with both cameras?
+* Debug switch or debug first 100 sentences or below 1000m?
