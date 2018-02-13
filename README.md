@@ -2,10 +2,10 @@
 
 code to run on a pi for a HAB flight.
 
-!(amazing diagram and pseudocode)[https://photos.app.goo.gl/z1cqi8LFvM8kGdN53]
+[amazing diagram and pseudocode](https://photos.app.goo.gl/z1cqi8LFvM8kGdN53)
 
 Learned lots from:
 * https://github.com/Chetic/Serenity 
 * https://github.com/PiInTheSky/pits
 
-[![Build Status](https://travis-ci.org/trickv/radio_flyer.png)](https://travis-ci.org/trickv/radio_flyer)
+[![Build Status](https://travis-ci.org/trickv/radio_flyer.png)](https://travis-ci.org/trickv/radio_flyer) [![Code Health](https://landscape.io/github/trickv/radio_flyer/master/landscape.svg?style=flat)](https://landscape.io/github/trickv/radio_flyer/master)

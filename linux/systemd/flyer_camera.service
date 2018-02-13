@@ -1,0 +1,15 @@
+[Unit]
+Description=flyer_camera
+Documentation=https://github.com/trickv/radio_flyer/
+
+[Service]
+ExecStart=/home/pi/radio_flyer/camera.py
+User=pi
+Group=pi
+StandardOutput=journal
+Restart=always
+RestartSec=30
+
+[Install]
+WantedBy=multi-user.target
+Alias=flyer_camera.service

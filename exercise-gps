@@ -1,0 +1,1 @@
+while true; do sleep 1s; time ./read-gps.py  2>&1 | tee gps-read-test-$(date -u +%Y%m%d-%H%M%S).log; done

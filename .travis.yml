@@ -1,14 +1,11 @@
 language: python
 
 python:
-  - "2.7"
-  - "3.3"
-  - "3.4"
   - "3.5"
   - "3.6"
 
 install:
-  - pip install pylint
+  - cat requirements.pip | grep -v ^picamera$ | pip install -r /dev/stdin
 
 script:
-  - pylint --disable superfluous-parens --disable missing-docstring *.py */*.py
+  - pylint --disable too-few-public-methods *.py

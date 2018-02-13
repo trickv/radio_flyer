@@ -1,0 +1,15 @@
+[Unit]
+Description=radio_flyer
+Documentation=https://github.com/trickv/radio_flyer/
+
+[Service]
+ExecStart=/home/pi/radio_flyer/main.py
+User=pi
+Group=pi
+StandardOutput=journal
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+Alias=radio_flyer.service

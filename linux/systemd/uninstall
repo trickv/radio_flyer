@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+
+for service in radio_flyer.service flyer_camera.service; do
+    sudo systemctl stop $service
+    sudo systemctl disable $service
+    sudo rm /etc/systemd/system/$service
+done
+
+sudo systemctl daemon-reload
