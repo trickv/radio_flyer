@@ -16,6 +16,7 @@ Feb 10 12:46:03 raspberrypi systemd[1]: hciuart.service: Failed with result 'exi
 * Send 1 decimal point of altitude precision
 * Buy another GPS antenna and shorten lead; move GPS board 2cm in to fit inside box
 * Internal temperature (lm75) signed/unsigned
+* Huge output buffer = 60-120s of real-time delay
 
 Canon A810:
 * Canon A810 clock sync
