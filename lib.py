@@ -174,8 +174,15 @@ class Transmitter():
         """
         Transmit the supplied string in ASCII format, and debug to console
         """
-        print("TX: {0}".format(string), end="", flush=True)
         self.uart.write(string.encode('ascii'))
+        print("TX: {0}".format(string), end="", flush=True)
+        nearly_empty_buffer = self.rtty_baud / 8 / 2 # 3 bytes at 50 baud is ~1/2 second
+        while True:
+            print("TX spin locking, out_waiting={}".format(self.uart.out_waiting))
+            sleep(0.1)
+            if self.uart.out_waiting <= nearly_empty_buffer:
+                print("TX buf low enough for me")
+                return
 
 
 def __ubx_checksum(prefix_and_payload):
