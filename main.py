@@ -33,8 +33,7 @@ def main():
     transmitter.send("Worlds best tracker software.\n")
     transmitter.send("Thanks to my lovely wife Sarah.\n")
     gps = lib.Gps()
-    bme280_sensor = lib.Bme280()
-    lm75_sensor = lib.Lm75()
+    sensors = lib.Sensors()
     crc16f = crcmod.predefined.mkCrcFun('crc-ccitt-false')
     transmitter.send("Tracker up and running. Lets fly!\n\n")
 
@@ -45,14 +44,14 @@ def main():
             utils.print_status_char(".")
             time.sleep(2)
             continue
-        bme280_data = bme280_sensor.read()
+        bme280_data = sensors.get_bme280()
         packet_params = {
             'callsign': CALLSIGN,
             'seq': sequence,
             'temperature': round(bme280_data.temperature, 2),
             'humidity': round(bme280_data.humidity, 2),
             'pressure': round(bme280_data.pressure, 2),
-            'internal_temperature': lm75_sensor.get_temperature(),
+            'internal_temperature': sensors.get_lm75_temperature(),
         }
         packet_params.update({
             'num_sats': int(gps_location.num_sats),

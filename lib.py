@@ -435,3 +435,67 @@ class Gps():
         """ prints a debug message to stdout if self_debug is set True """
         if self.debug_mode:
             print(message)
+
+
+class Sensors():
+    """
+    Contains all code for talking to on-board sensors, excluding the GPS.
+    Reads them periodically in a thread and makes latest data available for reading.
+    """
+    bme280_queue = None
+    lm75_queue = None
+
+    bme280_sensor = None
+    lm75_sensor = None
+    
+    latest_bme280_data = None
+    latest_lm75_temperature = None
+
+    read_thread = None
+    
+    maximum_read_queue_size = 1000
+
+    def __init__(self):
+        """
+        Start a thread which reads and logs data from the on-board sensors (excluding GPS).
+        """
+        self.lm75_sensor = Lm75()
+        self.bme280_sensor = Bme280()
+        self.lm75_queue = queue.Queue(maxsize=self.maximum_read_queue_size)
+        self.bme280_queue = queue.Queue(maxsize=self.maximum_read_queue_size)
+        self.read_thread = threading.Thread(target=self.__read_thread, daemon=True)
+        self.read_thread.start()
+
+    def __read_thread(self):
+        print("Sensor read thread started")
+        while True:
+            lm75_dataself.lm75_sensor.get_temperature()
+            lm75_queue.put(lm75_data)
+            bme280_data = self.bme280_sensor.read()
+            bme280_queue.put(bme280_data)
+            sensor_format = "Sensors: lm75={0}, bme280 t={1} h={2} p={3}" # FIXME csv? time?
+            print(sensor_format.format(lm75_data, bme280_data.temperature,
+                  bme280_data.humidity, bme280_data.pressure))
+            sleep(1)
+
+    def get_bme280(self):
+        if self.bme280_queue.qsize() == 0 and not self.read_thread.is_alive():
+            raise Exception("bme280 queue is empty and thread is dead.")
+        print("DEBUG: bme280 qsize={}".format(self.bme280_queue.qsize()))
+        while True:
+            try:
+                self.latest_bme280_data = self.bme280_queue.get(block=False)
+            except queue.Empty:
+                break
+        return self.latest_bme280_data
+
+    def get_lm75_temperature(self):
+        if self.lm75_queue.qsize() == 0 and not self.read_thread.is_alive():
+            raise Exception("lm75 queue is empty and thread is dead.")
+        print("DEBUG: lm75 qsize={}".format(self.lm75_queue.qsize()))
+        while True:
+            try:
+                self.latest_lm75_temperature = self.lm75_queue.get(block=False)
+            except queue.Empty:
+                break
+        return self.latest_lm75_temperature
