@@ -220,9 +220,10 @@ class Gps():
     """
     latest_sentence = None
     port = None
+    read_thread = None
+
     read_queue = None
     write_queue = None
-    read_thread = None
     ubx_read_queue = None
 
     # The following is a bit arbitrary...
