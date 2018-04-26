@@ -15,6 +15,7 @@ Feb 10 12:46:03 raspberrypi systemd[1]: hciuart.service: Failed with result 'exi
 * NOFIX sentence puts me in bermuda?
 * Buy another GPS antenna and shorten lead; move GPS board 2cm in to fit inside box
 * Huge output buffer = 60-120s of real-time delay
+** At the same time, can we log sensor data more frequently?
 * Onboard voltage sensor(s)
 
 Canon A810:
