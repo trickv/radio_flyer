@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+cd $(dirname $(realpath $0))
+
+sudo cp -pv README_ABOUT_THIS_SCIENCE_EXPERIMENT.txt /boot/
