@@ -1,5 +1,4 @@
 Pi Camera:
-* Change camera output file names to be zero padded 6 digits
 * Some kind of external output, or tracker RTTY, indicating that Pi cam is online
 ** Debug switch which causes RTTY to say things?
 

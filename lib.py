@@ -65,7 +65,7 @@ class Camera():
             print("Low on disk space: {}".format(free_space_bytes), flush=True)
             return
         self.sequence += 1
-        output_file = "{0}/{1}.jpg".format(self.output_directory, self.sequence)
+        output_file = "{0}/{1:06}.jpg".format(self.output_directory, self.sequence)
         print("Camera: taking picture to {}".format(output_file), flush=True)
         if os.path.exists(output_file):
             print("output file %s exists, skipping" % output_file)
