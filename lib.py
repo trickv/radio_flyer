@@ -104,10 +104,13 @@ class Lm75():
     def get_temperature(self):
         """
         Read I2C data and calculate temperature
+        http://www.ti.com/lit/ds/symlink/lm75a.pdf page 12
         """
         raw = self.bus.read_word_data(self.address, 0) & 0xFFFF
         raw = ((raw << 8) & 0xFF00) + (raw >> 8)
         temperature = (raw / 32.0) / 8.0
+        if raw > 0x100: # most significant bit is 1, so it's negative
+            temperature = -((~temperature & 0xFF) + 1)
         return temperature
 
 

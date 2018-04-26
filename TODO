@@ -14,7 +14,6 @@ Feb 10 12:46:03 raspberrypi systemd[1]: hciuart.service: Failed with result 'exi
 * Sync GPS clock to system
 * NOFIX sentence puts me in bermuda?
 * Buy another GPS antenna and shorten lead; move GPS board 2cm in to fit inside box
-* Internal temperature (lm75) signed/unsigned
 * Huge output buffer = 60-120s of real-time delay
 * Onboard voltage sensor(s)
 
@@ -26,3 +25,7 @@ Canon A810:
 Launch procedure:
 * Take a photo of a RTC with both cameras?
 * Debug switch or debug first 100 sentences or below 1000m?
+
+
+FIXED, requires testing:
+* Internal temperature (lm75) signed/unsigned
