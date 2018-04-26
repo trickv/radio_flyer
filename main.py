@@ -67,7 +67,7 @@ def main():
             had_initial_fix = True
             packet_template = PACKET_TEMPLATES['operational']
             packet_params.update({
-                'alt': int(round(gps_location.altitude, 0)),
+                'alt': int(round(gps_location.altitude, 1)),
                 'lat': round(gps_location.latitude, 6),
                 'lon': round(gps_location.longitude, 6),
             })
