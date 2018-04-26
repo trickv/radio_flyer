@@ -8,4 +8,4 @@ Learned lots from:
 * https://github.com/Chetic/Serenity 
 * https://github.com/PiInTheSky/pits
 
-[![Build Status](https://travis-ci.org/trickv/radio_flyer.png)](https://travis-ci.org/trickv/radio_flyer) [![Code Health](https://landscape.io/github/trickv/radio_flyer/master/landscape.svg?style=flat)](https://landscape.io/github/trickv/radio_flyer/master)
+[![Build Status](https://travis-ci.org/trickv/radio_flyer.png)](https://travis-ci.org/trickv/radio_flyer)
