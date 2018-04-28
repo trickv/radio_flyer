@@ -17,11 +17,13 @@ Wiring:
 * I2C sensors wired in
 * GPS on serial
 * MTX2 / NTX2 on the on-board UART
+ * Enable pin connected to GPIO 23
 
 On a clean install of raspbian 9:
 * raspi-config:
  * Interfacing: Enable the I2C interface
- * Interfacing: Disable serial console and hardware (don't worry)
-* Pi Nano W: Add to /boot/config.txt: dtoverlay=pi3-miniuart-bt
+ * Interfacing: Serial: Disable console, enable hardware.
+* /boot/config.txt:
+ * Pi Nano W: Add to /boot/config.txt: dtoverlay=pi3-miniuart-bt
 * git clone this repo into /home/pi/radio_flyer
 * cd into linux and run the install script in each subdir
