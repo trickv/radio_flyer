@@ -161,7 +161,7 @@ class Transmitter():
         """ Open the UART port with PySerial """
         if self.uart:
             raise Exception("UART previously opened?")
-        self.uart = serial.Serial('/dev/ttyUSBGPS',
+        self.uart = serial.Serial('/dev/ttyAMA0',
                                   self.rtty_baud, self.rtty_bits,
                                   self.rtty_parity, self.rtty_stopbits)
 
