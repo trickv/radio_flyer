@@ -20,7 +20,8 @@ Wiring:
 
 On a clean install of raspbian 9:
 * raspi-config:
- * Enable the I2C interface
- * Disable the on-board UART getty
+ * Interfacing: Enable the I2C interface
+ * Interfacing: Disable serial console and hardware (don't worry)
+* Pi Nano W: Add to /boot/config.txt: dtoverlay=pi3-miniuart-bt
 * git clone this repo into /home/pi/radio_flyer
 * cd into linux and run the install script in each subdir
