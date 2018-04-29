@@ -119,10 +119,9 @@ class Bme280():
     Bme280 I2C temperature sensor reading class.
     """
     def __init__(self, address=0x76, bus_id=1):
-        self.address = address
         self.bus = smbus.SMBus(bus_id)
         bme280_i2c.set_default_bus(1)
-        bme280_i2c.set_default_i2c_address(0x76)
+        bme280_i2c.set_default_i2c_address(address)
         bme280.setup()
 
     def read(self): # pylint: disable=no-self-use
