@@ -29,13 +29,13 @@ def main():
     sequence = 0
     had_initial_fix = False
     transmitter = lib.Transmitter()
-    transmitter.send("HAB tracker callsign {} starting up.\n".format(CALLSIGN))
-    transmitter.send("Worlds best tracker software.\n")
-    transmitter.send("Thanks to my lovely wife Sarah.\n")
+    transmitter.send("HAB tracker callsign {} starting up.\n".format(CALLSIGN), block=False)
+    transmitter.send("Worlds best tracker software.\n", block=False)
+    transmitter.send("Thanks to my lovely wife Sarah.\n", block=False)
     gps = lib.Gps()
     sensors = lib.Sensors()
     crc16f = crcmod.predefined.mkCrcFun('crc-ccitt-false')
-    transmitter.send("Tracker up and running. Lets fly!\n\n")
+    transmitter.send("Tracker up and running. Lets fly!\n\n", block=False)
 
     while True:
         gps_location = None

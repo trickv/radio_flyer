@@ -170,16 +170,18 @@ class Transmitter():
         self.uart.close()
         self.uart = None
 
-    def send(self, string):
+    def send(self, string, block=True):
         """
         Transmit the supplied string in ASCII format, and debug to console
         """
         self.uart.write(string.encode('ascii'))
         print("TX: {0}".format(string), end="", flush=True)
+        if not block:
+            return
         nearly_empty_buffer = self.rtty_baud / 8 / 2 # 3 bytes at 50 baud is ~1/2 second
         while True:
             print("TX spin locking, out_waiting={}".format(self.uart.out_waiting))
-            sleep(0.1)
+            time.sleep(0.3)
             if self.uart.out_waiting <= nearly_empty_buffer:
                 print("TX buf low enough for me")
                 return
@@ -472,18 +474,19 @@ class Sensors():
         self.bme280_queue = queue.Queue(maxsize=self.maximum_read_queue_size)
         self.read_thread = threading.Thread(target=self.__read_thread, daemon=True)
         self.read_thread.start()
+        time.sleep(2)
 
     def __read_thread(self):
         print("Sensor read thread started")
         while True:
-            lm75_dataself.lm75_sensor.get_temperature()
+            lm75_data = self.lm75_sensor.get_temperature()
             lm75_queue.put(lm75_data)
             bme280_data = self.bme280_sensor.read()
             bme280_queue.put(bme280_data)
             sensor_format = "Sensors: lm75={0}, bme280 t={1} h={2} p={3}" # FIXME csv? time?
             print(sensor_format.format(lm75_data, bme280_data.temperature,
                   bme280_data.humidity, bme280_data.pressure))
-            sleep(1)
+            time.sleep(1)
 
     def get_bme280(self):
         if self.bme280_queue.qsize() == 0 and not self.read_thread.is_alive():
