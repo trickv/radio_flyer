@@ -180,10 +180,9 @@ class Transmitter():
             return
         nearly_empty_buffer = self.rtty_baud / 8 / 2 # 3 bytes at 50 baud is ~1/2 second
         while True:
-            print("TX spin locking, out_waiting={}".format(self.uart.out_waiting))
             time.sleep(0.3)
-            if self.uart.out_waiting <= nearly_empty_buffer:
-                print("TX buf low enough for me")
+            if self.uart.out_waiting <= 0:
+                time.sleep(2)
                 return
 
 
@@ -431,7 +430,7 @@ class Gps():
             self.debug("non-dollar line")
             return False
         self.debug("GPS (buf={}) raw line: {}".format(waiting, line))
-        print("GPS: {}\n".format(ascii_line.strip()), flush=True)
+        print("GPS: {}".format(ascii_line.strip()), flush=True)
         try:
             nmea_line = pynmea2.parse(ascii_line, check=True)
         except pynmea2.nmea.ParseError as exception:
@@ -480,9 +479,9 @@ class Sensors():
         print("Sensor read thread started")
         while True:
             lm75_data = self.lm75_sensor.get_temperature()
-            lm75_queue.put(lm75_data)
+            self.lm75_queue.put(lm75_data)
             bme280_data = self.bme280_sensor.read()
-            bme280_queue.put(bme280_data)
+            self.bme280_queue.put(bme280_data)
             sensor_format = "Sensors: lm75={0}, bme280 t={1} h={2} p={3}" # FIXME csv? time?
             print(sensor_format.format(lm75_data, bme280_data.temperature,
                   bme280_data.humidity, bme280_data.pressure))
