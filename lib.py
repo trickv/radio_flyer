@@ -480,7 +480,7 @@ class Sensors():
             self.lm75_queue.put(lm75_data)
             bme280_data = self.bme280_sensor.read()
             self.bme280_queue.put(bme280_data)
-            sensor_format = "Sensors: lm75={0}, bme280 t={1} h={2} p={3}" # FIXME csv? time?
+            sensor_format = "Sensors: lm75={0}, bme280 t={1} h={2} p={3}"
             print(sensor_format.format(lm75_data, bme280_data.temperature,
                                        bme280_data.humidity, bme280_data.pressure))
             time.sleep(1)
