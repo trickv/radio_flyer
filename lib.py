@@ -177,7 +177,6 @@ class Transmitter():
         print("TX: {0}".format(string), end="", flush=True)
         if not block:
             return
-        nearly_empty_buffer = self.rtty_baud / 8 / 2 # 3 bytes at 50 baud is ~1/2 second
         while True:
             time.sleep(0.3)
             if self.uart.out_waiting <= 0:
@@ -454,12 +453,12 @@ class Sensors():
 
     bme280_sensor = None
     lm75_sensor = None
-    
+
     latest_bme280_data = None
     latest_lm75_temperature = None
 
     read_thread = None
-    
+
     maximum_read_queue_size = 1000
 
     def __init__(self):
@@ -483,10 +482,13 @@ class Sensors():
             self.bme280_queue.put(bme280_data)
             sensor_format = "Sensors: lm75={0}, bme280 t={1} h={2} p={3}" # FIXME csv? time?
             print(sensor_format.format(lm75_data, bme280_data.temperature,
-                  bme280_data.humidity, bme280_data.pressure))
+                                       bme280_data.humidity, bme280_data.pressure))
             time.sleep(1)
 
     def get_bme280(self):
+        """
+        Reads the latest available bme280 sensor data
+        """
         if self.bme280_queue.qsize() == 0 and not self.read_thread.is_alive():
             raise Exception("bme280 queue is empty and thread is dead.")
         print("DEBUG: bme280 qsize={}".format(self.bme280_queue.qsize()))
@@ -498,6 +500,9 @@ class Sensors():
         return self.latest_bme280_data
 
     def get_lm75_temperature(self):
+        """
+        Reads the latest available lm75 sensor data
+        """
         if self.lm75_queue.qsize() == 0 and not self.read_thread.is_alive():
             raise Exception("lm75 queue is empty and thread is dead.")
         print("DEBUG: lm75 qsize={}".format(self.lm75_queue.qsize()))
