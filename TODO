@@ -12,9 +12,7 @@ Feb 10 12:46:03 raspberrypi systemd[1]: hciuart.service: Unit entered failed sta
 Feb 10 12:46:03 raspberrypi systemd[1]: hciuart.service: Failed with result 'exit-code'.
 * Have some kind of remote debug port / method. Another serial port? Way to activate HDMI port? (could have getty auto-login to a shell? security is not important.)
 * Sync GPS clock to system
-* NOFIX sentence puts me in bermuda?
 * Buy another GPS antenna and shorten lead; move GPS board 2cm in to fit inside box
-* Onboard voltage sensor(s)
 
 Canon A810:
 * Canon A810 clock sync
