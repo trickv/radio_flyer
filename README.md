@@ -23,7 +23,10 @@ On a clean install of raspbian 9:
 * raspi-config:
  * Interfacing: Enable the I2C interface
  * Interfacing: Serial: Disable console, enable hardware.
+ * Interfacing: Enable the Camera
 * /boot/config.txt:
  * Pi Nano W: Add to /boot/config.txt: dtoverlay=pi3-miniuart-bt
+ * Optionally disable wifi to save power: dtoverlay=pi3-disable-wifi
+* sudo systemctl disable hciuart
 * git clone this repo into /home/pi/radio_flyer
 * cd into linux and run the install script in each subdir

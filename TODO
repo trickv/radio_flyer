@@ -3,13 +3,6 @@ Pi Camera:
 ** Debug switch which causes RTTY to say things?
 
 Pi tracker:
-* Read up on bluetooth initialization; maybe I need to configure this?
-Feb 10 12:46:03 raspberrypi btuart[234]: Initialization timed out.
-Feb 10 12:46:03 raspberrypi btuart[234]: bcm43xx_init
-Feb 10 12:46:03 raspberrypi systemd[1]: hciuart.service: Control process exited, code=exited status=1
-Feb 10 12:46:03 raspberrypi systemd[1]: Failed to start Configure Bluetooth Modems connected by UART.
-Feb 10 12:46:03 raspberrypi systemd[1]: hciuart.service: Unit entered failed state.
-Feb 10 12:46:03 raspberrypi systemd[1]: hciuart.service: Failed with result 'exit-code'.
 * Have some kind of remote debug port / method. Another serial port? Way to activate HDMI port? (could have getty auto-login to a shell? security is not important.)
 * Sync GPS clock to system
 * NOFIX sentence puts me in bermuda?
