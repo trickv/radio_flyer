@@ -12,6 +12,7 @@ import wiringpi
 import pynmea2
 import pynmea2.types.talker
 from bme280 import bme280, bme280_i2c
+from ina219 import INA219, DeviceRangeError
 import picamera # pylint: disable=import-error
 
 
@@ -129,6 +130,23 @@ class Bme280():
         Read I2C data
         """
         return bme280.read_all()
+
+
+class Ina219():
+    """
+    ina219 sensor reading class.
+    """
+    SHUNT_OHMS = 0.1
+
+    def __init__(self):
+        self.ina219_device = INA219(self.SHUNT_OHMS)
+        self.ina219_device.configure()
+
+    def read(self):
+        """
+        Returns voltage and current as a tuple
+        """
+        return(self.ina219_device.voltage(), self.ina219_device.current())
 
 
 class Transmitter():
@@ -450,12 +468,15 @@ class Sensors():
     """
     bme280_queue = None
     lm75_queue = None
+    ina219_queue = None
 
     bme280_sensor = None
     lm75_sensor = None
+    ina219_sensor = None
 
     latest_bme280_data = None
     latest_lm75_temperature = None
+    latest_ina219_data = None
 
     read_thread = None
 
@@ -467,8 +488,10 @@ class Sensors():
         """
         self.lm75_sensor = Lm75()
         self.bme280_sensor = Bme280()
+        self.ina219_sensor = Ina219()
         self.lm75_queue = queue.Queue(maxsize=self.maximum_read_queue_size)
         self.bme280_queue = queue.Queue(maxsize=self.maximum_read_queue_size)
+        self.ina219_queue = queue.Queue(maxsize=self.maximum_read_queue_size)
         self.read_thread = threading.Thread(target=self.__read_thread, daemon=True)
         self.read_thread.start()
         time.sleep(2)
@@ -480,9 +503,17 @@ class Sensors():
             self.lm75_queue.put(lm75_data)
             bme280_data = self.bme280_sensor.read()
             self.bme280_queue.put(bme280_data)
-            sensor_format = "Sensors: lm75={0}, bme280 t={1} h={2} p={3}"
+            try:
+                ina219_data = self.ina219_sensor.read()
+            except DeviceRangeError as e:
+                print("INA219 read error")
+                print(e)
+                ina219_data = (0,0)
+            self.ina219_queue.put(ina219_data)
+            sensor_format = "Sensors: lm75={0}, bme280 t={1} h={2} p={3} v={4} c={5}"
             print(sensor_format.format(lm75_data, bme280_data.temperature,
-                                       bme280_data.humidity, bme280_data.pressure))
+                                       bme280_data.humidity, bme280_data.pressure,
+                                       ina219_data[0], ina219_data[1]))
             time.sleep(1)
 
     def get_bme280(self):
@@ -512,3 +543,17 @@ class Sensors():
             except queue.Empty:
                 break
         return self.latest_lm75_temperature
+    
+    def get_ina219(self):
+        """
+        Reads the latest available ina219 sensor data
+        """
+        if self.ina219_queue.qsize() == 0 and not self.read_thread.is_alive():
+            raise Exception("ina219 queue is empty and thread is dead.")
+        print("DEBUG: ina219 qsize={}".format(self.ina219_queue.qsize()))
+        while True:
+            try:
+                self.latest_ina219 = self.ina219_queue.get(block=False)
+            except queue.Empty:
+                break
+        return self.latest_ina219
