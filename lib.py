@@ -34,6 +34,7 @@ class Camera():
 
     def __init__(self):
         base_directory = "/home/pi/photos/"
+        os.makedirs(base_directory, exist_ok=True)
         max_index = 0
         for directory in os.listdir(base_directory):
             try:
