@@ -14,7 +14,7 @@ PACKET_TEMPLATES = {
     'operational': "{callsign},{seq},{time},{lat},{lon},{alt}," +
                    "{num_sats},{temperature},{pressure},{humidity}," +
                    "{internal_temperature},{voltage},{current}",
-    'no_fix': "{callsign},{seq},NOFIX,{time},{num_sats}," +
+    'no_fix': "{callsign},{seq},NOFIX,{time},0,0,0,{num_sats}," +
               "{temperature},{pressure},{humidity},{uptime}," +
               "{internal_temperature},{voltage},{current}",
 }
