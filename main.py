@@ -48,10 +48,10 @@ def main():
         packet_params = {
             'callsign': CALLSIGN,
             'seq': sequence,
-            'temperature': round(bme280_data.temperature, 2),
-            'humidity': round(bme280_data.humidity, 2),
-            'pressure': round(bme280_data.pressure, 2),
-            'internal_temperature': sensors.get_lm75_temperature(),
+            'temperature': round(bme280_data.temperature, 1),
+            'humidity': round(bme280_data.humidity, 1),
+            'pressure': round(bme280_data.pressure, 1),
+            'internal_temperature': round(sensors.get_lm75_temperature(), 1),
         }
         packet_params.update({
             'num_sats': int(gps_location.num_sats),
