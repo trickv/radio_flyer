@@ -506,10 +506,10 @@ class Sensors():
             self.bme280_queue.put(bme280_data)
             try:
                 ina219_data = self.ina219_sensor.read()
-            except DeviceRangeError as e:
+            except DeviceRangeError as exception:
                 print("INA219 read error")
-                print(e)
-                ina219_data = (0,0)
+                print(exception)
+                ina219_data = (0, 0)
             self.ina219_queue.put(ina219_data)
             sensor_format = "Sensors: lm75={0}, bme280 t={1} h={2} p={3} v={4} c={5}"
             print(sensor_format.format(lm75_data, bme280_data.temperature,
@@ -544,7 +544,7 @@ class Sensors():
             except queue.Empty:
                 break
         return self.latest_lm75_temperature
-    
+
     def get_ina219(self):
         """
         Reads the latest available ina219 sensor data
@@ -554,7 +554,7 @@ class Sensors():
         print("DEBUG: ina219 qsize={}".format(self.ina219_queue.qsize()))
         while True:
             try:
-                self.latest_ina219 = self.ina219_queue.get(block=False)
+                self.latest_ina219_data = self.ina219_queue.get(block=False)
             except queue.Empty:
                 break
-        return self.latest_ina219
+        return self.latest_ina219_data
