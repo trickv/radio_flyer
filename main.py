@@ -8,7 +8,7 @@ import lib
 
 import utils
 
-CALLSIGN = "RADIOFLYER"
+CALLSIGN = "EAGLE"
 
 PACKET_TEMPLATES = {
     'operational': "{callsign},{seq},{time},{lat},{lon},{alt}," +
