@@ -9,14 +9,15 @@ import lib
 import utils
 
 CALLSIGN = "EAGLE"
+HAM_CALLSIGN = "KD9PRC"
 
 PACKET_TEMPLATES = {
     'operational': "{callsign},{seq},{time},{lat},{lon},{alt}," +
                    "{num_sats},{temperature},{pressure},{humidity}," +
-                   "{internal_temperature},{voltage},{current}",
+                   "{internal_temperature},{voltage},{current},{ham_callsign}",
     'no_fix': "{callsign},{seq},NOFIX,{time},0,0,0,{num_sats}," +
               "{temperature},{pressure},{humidity},{uptime}," +
-              "{internal_temperature},{voltage},{current}",
+              "{internal_temperature},{voltage},{current},{ham_callsign}",
 }
 # try: http://habitat.habhub.org/genpayload/
 #      payload -> create new
@@ -47,6 +48,7 @@ def main():
         bme280_data = sensors.get_bme280()
         ina219_data = sensors.get_ina219()
         packet_params = {
+            'ham_callsign': HAM_CALLSIGN,
             'callsign': CALLSIGN,
             'seq': sequence,
             'temperature': round(bme280_data.temperature, 1),
