@@ -14,10 +14,10 @@ HAM_CALLSIGN = "KD9PRC"
 PACKET_TEMPLATES = {
     'operational': "{callsign},{seq},{time},{lat},{lon},{alt}," +
                    "{num_sats},{temperature},{pressure},{humidity}," +
-                   "{internal_temperature},{voltage},{current},{ham_callsign}",
+                   "{internal_temperature},{ham_callsign}",
     'no_fix': "{callsign},{seq},NOFIX,{time},0,0,0,{num_sats}," +
               "{temperature},{pressure},{humidity},{uptime}," +
-              "{internal_temperature},{voltage},{current},{ham_callsign}",
+              "{internal_temperature},{ham_callsign}",
 }
 # try: http://habitat.habhub.org/genpayload/
 #      payload -> create new
@@ -46,7 +46,6 @@ def main():
             time.sleep(2)
             continue
         bme280_data = sensors.get_bme280()
-        ina219_data = sensors.get_ina219()
         packet_params = {
             'ham_callsign': HAM_CALLSIGN,
             'callsign': CALLSIGN,
@@ -55,8 +54,6 @@ def main():
             'humidity': round(bme280_data.humidity, 1),
             'pressure': round(bme280_data.pressure, 1),
             'internal_temperature': round(sensors.get_lm75_temperature(), 1),
-            'voltage': round(ina219_data[0], 2),
-            'current': int(ina219_data[1]),
         }
         packet_params.update({
             'num_sats': int(gps_location.num_sats),

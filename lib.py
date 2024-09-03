@@ -489,10 +489,8 @@ class Sensors():
         """
         self.lm75_sensor = Lm75()
         self.bme280_sensor = Bme280()
-        self.ina219_sensor = Ina219()
         self.lm75_queue = queue.Queue(maxsize=self.maximum_read_queue_size)
         self.bme280_queue = queue.Queue(maxsize=self.maximum_read_queue_size)
-        self.ina219_queue = queue.Queue(maxsize=self.maximum_read_queue_size)
         self.read_thread = threading.Thread(target=self.__read_thread, daemon=True)
         self.read_thread.start()
         time.sleep(2)
@@ -504,17 +502,10 @@ class Sensors():
             self.lm75_queue.put(lm75_data)
             bme280_data = self.bme280_sensor.read()
             self.bme280_queue.put(bme280_data)
-            try:
-                ina219_data = self.ina219_sensor.read()
-            except DeviceRangeError as exception:
-                print("INA219 read error")
-                print(exception)
-                ina219_data = (0, 0)
-            self.ina219_queue.put(ina219_data)
-            sensor_format = "Sensors: lm75={0}, bme280 t={1} h={2} p={3} v={4} c={5}"
+            sensor_format = "Sensors: lm75={0}, bme280 t={1} h={2} p={3}"
             print(sensor_format.format(lm75_data, bme280_data.temperature,
-                                       bme280_data.humidity, bme280_data.pressure,
-                                       ina219_data[0], ina219_data[1]))
+                                       bme280_data.humidity, bme280_data.pressure
+                                       ))
             time.sleep(1)
 
     def get_bme280(self):
